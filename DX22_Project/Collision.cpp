@@ -42,7 +42,7 @@ Collision::Result Collision::Hit(Box a, Box b)
             {
                 out.isHit = true;
 
-                DirectX::XMVECTOR vDist = 
+                /*DirectX::XMVECTOR vDist = 
                     DirectX::XMVectorSubtract(vPosA, vPosB);
                 vDist = DirectX::XMVectorAbs(vDist);
 
@@ -53,10 +53,10 @@ Collision::Result Collision::Hit(Box a, Box b)
                     DirectX::XMVectorSubtract(vSumsize, vDist);
 
                 DirectX::XMFLOAT3 overIap;
-                DirectX::XMStoreFloat3(&overIap,vOverIap);
+                DirectX::XMStoreFloat3(&overIap,vOverIap);*/
 
 
-                if (overIap.x < overIap.y) {
+               /* if (overIap.x < overIap.y) {
                     if (overIap.x < overIap.z)
                     {
                         out.dir = { a.center.x < b.center.x ? -1.0f : 1.0f,0.0f,0.0f };
@@ -69,7 +69,7 @@ Collision::Result Collision::Hit(Box a, Box b)
                         out.dir = { 0.0f,a.center.y < b.center.y ? -1.0f : 1.0f,0.0f };
                     else
                         out.dir = { 0.0f,0.0f,a.center.z < b.center.z ? -1.0f : 1.0f };
-                }
+                }*/
                 
 
             }
