@@ -1,106 +1,86 @@
-#include "GaugeUI.h"
+Ôªø#include "GaugeUI.h"
 
 #include "Sprite.h"
 #include <DirectXMath.h>
-#include "Defines.h" 
+#include "Defines.h"
+
+using namespace DirectX;
+
 GaugeUI::GaugeUI()
     : m_pFrame(nullptr)
     , m_pGauge(nullptr)
     , m_rate(0.5f)
 {
     m_pFrame = new Texture();
-    if (FAILED(m_pFrame->Create("Assets/Texture/UIFrame.png"))) {
+    if (FAILED(m_pFrame->Create("Assets/Texture/UIFrame.png")))
+    {
         MessageBox(nullptr, "UIFrame load failed", "Error", MB_OK);
     }
+
     m_pGauge = new Texture();
-    if (FAILED(m_pGauge->Create("Assets/Texture/UIGauge.png"))) {
-        MessageBox(nullptr, "UI_Gauge load failed", "Error", MB_OK);
+    if (FAILED(m_pGauge->Create("Assets/Texture/UIGauge.png")))
+    {
+        MessageBox(nullptr, "UIGauge load failed", "Error", MB_OK);
     }
 }
+
 GaugeUI::~GaugeUI()
 {
     delete m_pFrame;
     delete m_pGauge;
 }
+
 void GaugeUI::Draw()
 {
-   
-    // ===== View / ProjectionÅi2DópÅj=====
-    DirectX::XMFLOAT4X4 view, proj;
+    using namespace DirectX;
 
-    auto mView = DirectX::XMMatrixIdentity(); // Åö UIÇÕÇ±ÇÍ
-    auto mProj = DirectX::XMMatrixOrthographicLH(
-        (float)SCREEN_WIDTH,
-        (float)SCREEN_HEIGHT,
-        0.0f,
-        1.0f
-    );
+    XMFLOAT2 size = { 300.0f, 30.0f };
 
-    DirectX::XMStoreFloat4x4(&view, DirectX::XMMatrixTranspose(mView));
-    DirectX::XMStoreFloat4x4(&proj, DirectX::XMMatrixTranspose(mProj));
-
-    Sprite::SetView(view);
-    Sprite::SetProjection(proj);
-    // ===== à íuÅEÉTÉCÉY =====
-    DirectX::XMFLOAT2 size = { 300, 30 };
-
-    // âEè„Ç…îzíu
-    DirectX::XMFLOAT2 pos = { SCREEN_WIDTH - size.x * 0.5f - 10.0f, 10.0f };
-    // âEí[Ç©ÇÁ10px, è„Ç©ÇÁ10px
-    //// ===== à íuÅEÉTÉCÉY =====
-    //DirectX::XMFLOAT2 pos = { 200, 100 };
-    //DirectX::XMFLOAT2 size = { 300, 30 };
-
-    // ===== ÉtÉåÅ[ÉÄ =====
+    XMFLOAT2 pos =
     {
-        auto T = DirectX::XMMatrixTranslation(
-            pos.x - size.x * 0.5f,
-            pos.y,
-            0.0f
-        );
+        SCREEN_WIDTH - (size.x * 0.5f) - 10.0f,
+        (size.y * 0.5f) + 10.0f
+    };
 
-        auto S = DirectX::XMMatrixScaling(
-            1.0f,
-            -1.0f,   // Åö YîΩì]
-            1.0f
-        );
+    // ===============================
+    // „Éï„É¨„Éº„É†
+    // ===============================
+    {
+        XMMATRIX W =
+            XMMatrixTranslation(pos.x, pos.y, 0.0f); // ‚Üê –ë–ï–ó SCALE
 
-        auto W = S * T;
-
-        DirectX::XMFLOAT4X4 world;
-        DirectX::XMStoreFloat4x4(&world, DirectX::XMMatrixTranspose(W));
+        XMFLOAT4X4 world;
+        XMStoreFloat4x4(&world, XMMatrixTranspose(W));
 
         Sprite::SetWorld(world);
-        Sprite::SetSize(size);
-        Sprite::SetOffset({ size.x * 0.5f, 0.0f });
+        Sprite::SetSize(size);                  // ‚Üê –¢–û–õ–¨–ö–û –¢–£–¢
+        Sprite::SetOffset({ 0.0f, 0.0f });
         Sprite::SetTexture(m_pFrame);
+        Sprite::SetUVPos({ 0.0f, 0.0f });
+        Sprite::SetUVScale({ 1.0f, 1.0f });
+        Sprite::SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
         Sprite::Draw();
     }
 
-    // ===== ÉQÅ[ÉW =====
+    // ===============================
+    // „Ç≤„Éº„Ç∏
+    // ===============================
     {
-        auto T = DirectX::XMMatrixTranslation(
-            pos.x - size.x * 0.5f,
-            pos.y,
-            0.0f
-        );
+        float gaugeWidth = size.x * m_rate;
 
-        auto S = DirectX::XMMatrixScaling(
-            m_rate,
-            -1.0f,   // Åö YîΩì]
-            1.0f
-        );
+        XMMATRIX W =
+            XMMatrixTranslation(pos.x, pos.y, 0.0f); // ‚Üê –ë–ï–ó SCALE
 
-        auto W = S * T;
-
-        DirectX::XMFLOAT4X4 world;
-        DirectX::XMStoreFloat4x4(&world, DirectX::XMMatrixTranspose(W));
+        XMFLOAT4X4 world;
+        XMStoreFloat4x4(&world, XMMatrixTranspose(W));
 
         Sprite::SetWorld(world);
-        Sprite::SetSize(size);
-        Sprite::SetOffset({ size.x * 0.5f, 0.0f });
+        Sprite::SetSize({ gaugeWidth, size.y }); // ‚Üê —à–∏—Ä–∏–Ω–∞ = rate
+        Sprite::SetOffset({ 0.0f, 0.0f });
         Sprite::SetTexture(m_pGauge);
+        Sprite::SetUVPos({ 0.0f, 0.0f });
+        Sprite::SetUVScale({ 1.0f, 1.0f });
+        Sprite::SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
         Sprite::Draw();
     }
 }
-

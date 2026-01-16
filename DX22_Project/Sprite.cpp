@@ -1,11 +1,76 @@
-#include "Sprite.h"
+Ôªø#include "Sprite.h"
+#include <d3d11.h>
 
 Sprite::Data Sprite::m_data;
 std::shared_ptr<VertexShader> Sprite::m_defVS;
 std::shared_ptr<PixelShader> Sprite::m_defPS;
+static ID3D11SamplerState* s_sampler = nullptr;
+static ID3D11BlendState* s_blendAlpha = nullptr;
+static ID3D11RasterizerState* s_rsNoCull = nullptr;
+static ID3D11DepthStencilState* s_dssNoDepth = nullptr;
+
 
 void Sprite::Init()
 {
+
+	if (!s_sampler)
+	{
+		D3D11_SAMPLER_DESC sd = {};
+		sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		sd.MinLOD = 0;
+		sd.MaxLOD = D3D11_FLOAT32_MAX;
+
+		HRESULT hr = GetDevice()->CreateSamplerState(&sd, &s_sampler);
+		if (FAILED(hr))
+		{
+			MessageBox(nullptr, "CreateSamplerState failed", "Error", MB_OK);
+		}
+	}
+
+	if (!s_blendAlpha)
+	{
+		D3D11_BLEND_DESC bd = {};
+		bd.RenderTarget[0].BlendEnable = TRUE;
+		bd.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		bd.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		bd.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		bd.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		bd.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		bd.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		bd.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		HRESULT hr = GetDevice()->CreateBlendState(&bd, &s_blendAlpha);
+		if (FAILED(hr)) MessageBox(nullptr, "CreateBlendState failed", "Error", MB_OK);
+	}
+
+	if (!s_dssNoDepth)
+	{
+		D3D11_DEPTH_STENCIL_DESC ds = {};
+		ds.DepthEnable = FALSE;
+		ds.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		ds.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		ds.StencilEnable = FALSE;
+
+		HRESULT hr = GetDevice()->CreateDepthStencilState(&ds, &s_dssNoDepth);
+		if (FAILED(hr)) MessageBox(nullptr, "CreateDepthStencilState failed", "Error", MB_OK);
+	}
+
+	if (!s_rsNoCull)
+	{
+		D3D11_RASTERIZER_DESC rd = {};
+		rd.FillMode = D3D11_FILL_SOLID;
+		rd.CullMode = D3D11_CULL_NONE;
+		rd.ScissorEnable = FALSE;
+		rd.DepthClipEnable = TRUE;
+
+		HRESULT hr = GetDevice()->CreateRasterizerState(&rd, &s_rsNoCull);
+		if (FAILED(hr)) MessageBox(nullptr, "CreateRasterizerState failed", "Error", MB_OK);
+	}
+
 	const char* VS = R"EOT(
 struct VS_IN {
 	float3 pos : POSITION0;
@@ -48,6 +113,7 @@ struct PS_IN {
 	float2 uv : TEXCOORD0;
 	float4 color : COLOR0;
 };
+
 Texture2D tex : register(t0);
 SamplerState samp : register(s0);
 float4 main(PS_IN pin) : SV_TARGET {
@@ -65,7 +131,7 @@ float4 main(PS_IN pin) : SV_TARGET {
 		{{ 0.5f,-0.5f, 0.0f}, {1.0f, 1.0f}},
 	};
 
-	// ÉÅÉbÉVÉÖ
+	// „É°„ÉÉ„Ç∑„É•
 	MeshBuffer::Description desc = {};
 	desc.pVtx = vtx;
 	desc.vtxSize = sizeof(Vertex);
@@ -74,7 +140,7 @@ float4 main(PS_IN pin) : SV_TARGET {
 	m_data.mesh = std::make_shared<MeshBuffer>();
 	m_data.mesh->Create(desc);
 
-	// ÉpÉâÉÅÅ[É^Å[
+	// „Éë„É©„É°„Éº„Çø„Éº
 	m_data.param[0] = DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	m_data.param[1] = DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	m_data.param[2] = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -82,7 +148,7 @@ float4 main(PS_IN pin) : SV_TARGET {
 	DirectX::XMStoreFloat4x4(&m_data.matrix[1], DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_data.matrix[2], DirectX::XMMatrixIdentity());
 
-	// ÉVÉFÅ[É_Å[
+	// „Ç∑„Çß„Éº„ÉÄ„Éº
 	m_defVS = std::make_shared<VertexShader>();
 	m_defVS->Compile(VS);
 	m_data.vs = m_defVS.get();
@@ -92,13 +158,26 @@ float4 main(PS_IN pin) : SV_TARGET {
 }
 void Sprite::Uninit()
 {
+	SAFE_RELEASE(s_blendAlpha);
+	SAFE_RELEASE(s_rsNoCull);
+	SAFE_RELEASE(s_dssNoDepth);
+	SAFE_RELEASE(s_sampler);
 }
 void Sprite::Draw()
 {
 	m_data.vs->WriteBuffer(0, m_data.matrix);
 	m_data.vs->WriteBuffer(1, m_data.param);
+	if (s_rsNoCull)   GetContext()->RSSetState(s_rsNoCull);
+	if (s_dssNoDepth) GetContext()->OMSetDepthStencilState(s_dssNoDepth, 0);
+
+	if (s_blendAlpha)
+	{
+		float blendFactor[4] = { 0,0,0,0 };
+		GetContext()->OMSetBlendState(s_blendAlpha, blendFactor, 0xFFFFFFFF);
+	}
 	m_data.vs->Bind();
 	m_data.ps->SetTexture(0, m_data.texture);
+	GetContext()->PSSetSamplers(0, 1, &s_sampler);
 	m_data.ps->Bind();
 	m_data.mesh->Draw();
 }

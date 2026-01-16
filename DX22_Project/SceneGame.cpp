@@ -1,4 +1,4 @@
-#include "SceneGame.h"
+Ôªø#include "SceneGame.h"
 #include "Geometory.h"
 #include "DirectXMath.h"
 #include "Model.h"
@@ -6,275 +6,292 @@
 #include "CameraDebug.h"
 #include "CPlayer.h"
 #include "Block.h"
+#include "Sprite.h"
+#include "Defines.h"
 
-void DrawBoxTransform(float moveX, float moveY, float moveZ,
-	float scaleX, float scaleY, float scaleZ,float rotX,float rotY,float rotZ)
+// ===============================
+// Utility
+// ===============================
+void DrawBoxTransform(
+    float moveX, float moveY, float moveZ,
+    float scaleX, float scaleY, float scaleZ,
+    float rotX, float rotY, float rotZ)
 {
-	
-	DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(moveX, moveY, moveZ);  // ìVñ Ç™ÉOÉäÉbÉhÇÊÇËÇ‡â∫Ç…óàÇÈÇÊÇ§Ç…à⁄ìÆ 
-	DirectX::XMMATRIX S = DirectX::XMMatrixScaling(scaleX, scaleY,scaleZ); // ínñ Ç∆Ç»ÇÈÇÊÇ§Ç…ÅAëOå„ç∂âEÇ…çLÇ≠ÅAè„â∫Ç…ã∑Ç≠Ç∑ÇÈ 
+    using namespace DirectX;
 
-	DirectX::XMMATRIX Rx = DirectX::XMMatrixRotationX(rotX);
-	DirectX::XMMATRIX Ry = DirectX::XMMatrixRotationY(rotY);
-	DirectX::XMMATRIX Rz = DirectX::XMMatrixRotationZ(rotZ);
+    XMMATRIX T = XMMatrixTranslation(moveX, moveY, moveZ);
+    XMMATRIX S = XMMatrixScaling(scaleX, scaleY, scaleZ);
+    XMMATRIX Rx = XMMatrixRotationX(rotX);
+    XMMATRIX Ry = XMMatrixRotationY(rotY);
+    XMMATRIX Rz = XMMatrixRotationZ(rotZ);
 
-	DirectX::XMMATRIX mat = S * Rx * Ry * Rz * T;
-	//DirectX::XMMATRIX mat = S * T;//ÇªÇÍÇºÇÍÇÃçsóÒÇä|ÇØçáfÇÌÇπÇƒäiî[ 
-	mat = DirectX::XMMatrixTranspose(mat);//CPUÇ©ÇÁGPUÇ…çsóÒÇëóÇÈëOÇ…é¿çsÇ∑ÇÈèàóù
+    XMMATRIX mat = S * Rx * Ry * Rz * T;
+    mat = XMMatrixTranspose(mat);
 
-	DirectX::XMFLOAT4X4 fMat; // çsóÒÇÃäiî[êÊ 
-	DirectX::XMStoreFloat4x4(&fMat, mat);//MatÇfMatÇ…äiî[Ç∑ÇÈèàóù; 
+    XMFLOAT4X4 fMat;
+    XMStoreFloat4x4(&fMat, mat);
 
-	Geometory::SetWorld(fMat); // É{ÉbÉNÉXÇ…ïœä∑çsóÒÇê›íË 
-	Geometory::DrawBox();
+    Geometory::SetWorld(fMat);
+    Geometory::DrawBox();
 }
 
+// ===============================
+// SceneGame
+// ===============================
 SceneGame::SceneGame()
 {
-	m_pModel = new Model();
+    m_pModel = new Model();
+    m_pBranchModel = new Model();
+    m_pBushModel = new Model();
 
-	m_pBranchModel = new Model();
+    m_pBlock = new Block({ 10.0f,8.0f,8.0f });
+    m_pBlock->SetPos({ 0.0f,0.5f,-8.0f });
 
-	m_pBushModel = new Model();
-	 
-	m_pBlock = new Block({ 10.0f,8.0f,8.0f });
-	m_pBlock->SetPos({ 0.0f,0.5f,-8.0f });
+    // [UI FIX] UIÁîüÊàê„ÅØ„Åì„Åì„ÅßOK
+    m_pGaugeUI = new GaugeUI();
 
-	m_pGaugeUI = new GaugeUI();
+    if (!m_pBranchModel->Load("Assets/Model/LowPolyNature/Tree_02.fbx", 0.0125f))
+    {
+        MessageBox(NULL, "Branch_01 „ÅÆË™≠„ÅøËæº„Åø„Å´Â§±Êïó„Åó„Åæ„Åó„Åü„ÄÇ", "Error", MB_OK);
+    }
 
-	/*m_wallCollision.center = { 1.0f, 1.0f, -5.0f };
-	m_wallCollision.size = { 20.0f, 0.5f, 5.0f };*/
+    if (!m_pBushModel->Load("Assets/Model/LowPolyNature/Rock_02.fbx", 0.05f))
+    {
+        MessageBox(NULL, "Bush_01 „ÅÆË™≠„ÅøËæº„Åø„Å´Â§±Êïó„Åó„Åæ„Åó„Åü„ÄÇ", "Error", MB_OK);
+    }
 
-	//const fileName="Assets/Model/Ç‹ÇØÇÒéÆê‘å©Ç©ÇÈÇ—ïPàﬂëïMMD/Ç‹ÇØÇÒéÆê‘å©Ç©ÇÈÇ—ïPàﬂëï_É}ÉìÉgÇ»Çµver1.0.pmx"
-	 //ÉÇÉfÉãÇì«Ç›çûÇﬁÅiÉtÉ@ÉCÉãÉpÉXÇÕé©ï™ÇÃÉÇÉfÉãÇ…çáÇÌÇπÇƒïœçXÅj
-	/*if (!m_pModel->Load(
-			"Assets/Model/yousei_low_fin.fbx", 0.25f)) {
+    m_pCamera = new CameraDebug();
 
-			MessageBox(NULL, "ÉÇÉfÉãÇÃì«Ç›çûÇ›Ç…é∏îsÇµÇ‹ÇµÇΩÅB", "Error", MB_OK);
-	}*/
+    m_pCPlayer = new CPlayer();
+    m_pCPlayer->SetCamera(m_pCamera);
 
-	if (!m_pBranchModel->Load("Assets/Model/LowPolyNature/Tree_02.fbx", 0.0125f))
-	{
-		MessageBox(NULL, "Branch_01 ÇÃì«Ç›çûÇ›Ç…é∏îsÇµÇ‹ÇµÇΩÅB", "Error", MB_OK);
-
-	}
-
-	
-	if(!m_pBushModel->Load("Assets/Model/LowPolyNature/Rock_02.fbx", 0.05f))
-	{
-		MessageBox(NULL, "Bush_01 ÇÃì«Ç›çûÇ›Ç…é∏îsÇµÇ‹ÇµÇΩÅB", "Error", MB_OK);
-
-	}
-
-	//camera
-	m_pCamera = new CameraDebug();
-
-
-	m_pCPlayer = new CPlayer();
-	m_pCPlayer->SetCamera(m_pCamera);
-
-	// --- 3Dï\é¶ê›íËÅiZÉoÉbÉtÉ@óLå¯âªÅj---
-	RenderTarget* pRTV = GetDefaultRTV();
-	DepthStencil* pDSV = GetDefaultDSV();
-	SetRenderTargets(1, &pRTV, pDSV);
-	SetDepthTest(true);
-
-	
-	
-
-
+    // --- 3DÊèèÁîªË®≠ÂÆö ---
+    RenderTarget* pRTV = GetDefaultRTV();
+    DepthStencil* pDSV = GetDefaultDSV();
+    SetRenderTargets(1, &pRTV, pDSV);
+    SetDepthTest(true);
 }
 
 SceneGame::~SceneGame()
 {
-	if (m_pBlock)
-	{
-		delete m_pBlock;
-		m_pBlock = nullptr;
-	}
-
-	if (m_pModel)
-	{
-		delete m_pModel;
-		m_pModel = nullptr;
-	}
-
-	if (m_pCamera)
-	{
-		delete m_pCamera;
-		m_pCamera= nullptr;
-	}
-
-	if (m_pCPlayer) {
-		delete m_pCPlayer;
-		m_pCPlayer = nullptr;
-	}
-	if (m_pBranchModel) 
-	{
-		delete m_pBranchModel; m_pBranchModel = nullptr;
-	}
-	if (m_pBushModel)
-	{
-		delete m_pBushModel; m_pBushModel = nullptr;
-	}
-	if (m_pGaugeUI)
-	{
-		delete m_pGaugeUI; m_pGaugeUI = nullptr;
-	}
-
+    delete m_pBlock;        m_pBlock = nullptr;
+    delete m_pModel;        m_pModel = nullptr;
+    delete m_pCamera;       m_pCamera = nullptr;
+    delete m_pCPlayer;      m_pCPlayer = nullptr;
+    delete m_pBranchModel;  m_pBranchModel = nullptr;
+    delete m_pBushModel;    m_pBushModel = nullptr;
+    delete m_pGaugeUI;      m_pGaugeUI = nullptr;
 }
 
 void SceneGame::Update()
 {
-	m_pCamera->Update();
-	m_pCPlayer->Update();
-	m_pBlock->Update();
+    m_pCamera->Update();
+    m_pCPlayer->Update();
+    m_pBlock->Update();
 
-	// --- ìñÇΩÇËîªíË ---
+    Collision::Box a = m_pCPlayer->GetCollision();
+    Collision::Box b = m_pBlock->GetCollision();
+    Collision::Result result = Collision::Hit(a, b);
 
-
-	Collision::Box a = m_pCPlayer->GetCollision();
-	Collision::Box b = m_pBlock->GetCollision();
-
-	Collision::Result result = Collision::Hit(a, b);
-
-	if (result.isHit)
-	{
-		if (result.dir.x != 0.0f) m_pCPlayer->Bound(CPlayer::BoundX);
-		if (result.dir.y != 0.0f) m_pCPlayer->Bound(CPlayer::BoundY);
-		if (result.dir.z != 0.0f) m_pCPlayer->Bound(CPlayer::BoundZ);
-	}
+    if (result.isHit)
+    {
+        if (result.dir.x != 0.0f) m_pCPlayer->Bound(CPlayer::BoundX);
+        if (result.dir.y != 0.0f) m_pCPlayer->Bound(CPlayer::BoundY);
+        if (result.dir.z != 0.0f) m_pCPlayer->Bound(CPlayer::BoundZ);
+    }
 }
 
 void SceneGame::Draw()
 {
-	// í∏ì_ÉVÉFÅ[É_Å[Ç…ìnÇ∑ïœä∑çsóÒÇçÏê¨ 
-	DirectX::XMFLOAT4X4 fwvp[3];
-	DirectX::XMMATRIX world, view, proj;
+    using namespace DirectX;
+    // ===============================
+    // 3DÊèèÁîª
+    // ===============================
+    XMFLOAT4X4 fwvp[3];
+    XMMATRIX world = XMMatrixIdentity();
 
-	// --- ÉèÅ[ÉãÉhçsóÒ ---
-	world = DirectX::XMMatrixIdentity();
-	DirectX::XMStoreFloat4x4(&fwvp[0], DirectX::XMMatrixTranspose(world));
-	
+    XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(world));
+    fwvp[1] = m_pCamera->GetViewMatrix();
+    fwvp[2] = m_pCamera->GetProjectionMatrix();
 
-	DirectX::XMFLOAT3 m_redPos = { 0.0f, 0.0f, 0.0f };
-	DirectX::XMFLOAT3 m_branchPos = { -4.0f, 1.25f, -6.0f };
-	DirectX::XMFLOAT3 m_bushPos = { -3.0f, 1.5f, -6.0f };
+    ShaderList::SetWVP(fwvp);
 
-	DirectX::XMMATRIX worldRed = DirectX::XMMatrixTranslation(m_redPos.x, m_redPos.y, m_redPos.z);
-	DirectX::XMMATRIX worldBranch = DirectX::XMMatrixTranslation(m_branchPos.x, m_branchPos.y, m_branchPos.z);
-	DirectX::XMMATRIX worldBush = DirectX::XMMatrixTranslation(m_bushPos.x, m_bushPos.y, m_bushPos.z);
+    XMFLOAT3 m_redPos = { 0.0f, 0.0f, 0.0f };
+    XMFLOAT3 m_branchPos = { -4.0f, 1.25f, -6.0f };
+    XMFLOAT3 m_bushPos = { -3.0f, 1.5f, -6.0f };
 
-	//ÉJÉÅÉâÇÃÉrÉÖÅ[ÅEÉvÉçÉWÉFÉNÉVÉáÉìÇéÊìæ
-	fwvp[1] = m_pCamera->GetViewMatrix();
-	fwvp[2] = m_pCamera->GetProjectionMatrix();
+    // --- Ëµ§Ë∫´ ---
+    {
+        XMMATRIX w = XMMatrixTranslation(m_redPos.x, m_redPos.y, m_redPos.z);
+        XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
+        ShaderList::SetWVP(fwvp);
 
-	// --- ì]íuÇµÇƒÉVÉFÅ[É_Å[Ç÷ëóÇÈ ---
-	DirectX::XMStoreFloat4x4(&fwvp[0], DirectX::XMMatrixTranspose(world));
+        m_pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
+        m_pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
 
-	fwvp[1] = m_pCamera->GetViewMatrix();
-	fwvp[2] = m_pCamera->GetProjectionMatrix();
+        for (int i = 0; i < m_pModel->GetMeshNum(); ++i)
+        {
+            auto mesh = *m_pModel->GetMesh(i);
+            auto material = *m_pModel->GetMaterial(mesh.materialID);
+            ShaderList::SetMaterial(material);
+            m_pModel->Draw(i);
+        }
+    }
 
-	// ÉVÉFÅ[É_Å[Ç÷ïœä∑çsóÒÇê›íË 
-	ShaderList::SetWVP(fwvp);
+    // --- Êûù ---
+    {
+        XMMATRIX w = XMMatrixTranslation(m_branchPos.x, m_branchPos.y, m_branchPos.z);
+        XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
+        ShaderList::SetWVP(fwvp);
 
-	// ÉVÉFÅ[É_Å[ê›íË
-	m_pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
-	m_pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
+        m_pBranchModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
+        m_pBranchModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
 
-	// ê‘êgÉJÉãÉrÉÇÉfÉã
-	{
-		DirectX::XMMATRIX worldRed = DirectX::XMMatrixTranslation(m_redPos.x, m_redPos.y, m_redPos.z);
-		DirectX::XMStoreFloat4x4(&fwvp[0], DirectX::XMMatrixTranspose(worldRed));
+        for (int i = 0; i < m_pBranchModel->GetMeshNum(); ++i)
+        {
+            auto mesh = *m_pBranchModel->GetMesh(i);
+            auto material = *m_pBranchModel->GetMaterial(mesh.materialID);
+            ShaderList::SetMaterial(material);
+            m_pBranchModel->Draw(i);
+        }
+    }
 
-		ShaderList::SetWVP(fwvp);
+    // --- Áü≥ ---
+    {
+        XMMATRIX w = XMMatrixTranslation(m_bushPos.x, m_bushPos.y, m_bushPos.z);
+        XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
+        ShaderList::SetWVP(fwvp);
 
-		m_pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
-		m_pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
+        m_pBushModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
+        m_pBushModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
 
-		for (int i = 0; i < m_pModel->GetMeshNum(); ++i) {
-			Model::Mesh mesh = *m_pModel->GetMesh(i);
-			Model::Material material = *m_pModel->GetMaterial(mesh.materialID);
-			ShaderList::SetMaterial(material);
-			m_pModel->Draw(i);
-		}
-	}
+        for (int i = 0; i < m_pBushModel->GetMeshNum(); ++i)
+        {
+            auto mesh = *m_pBushModel->GetMesh(i);
+            auto material = *m_pBushModel->GetMaterial(mesh.materialID);
+            ShaderList::SetMaterial(material);
+            m_pBushModel->Draw(i);
+        }
+    }
 
-	// é}ÉÇÉfÉã
-	{
-		DirectX::XMMATRIX worldBranch = DirectX::XMMatrixTranslation(m_branchPos.x, m_branchPos.y, m_branchPos.z);
-		DirectX::XMStoreFloat4x4(&fwvp[0], DirectX::XMMatrixTranspose(worldBranch));
-		
-		ShaderList::SetWVP(fwvp);
+    m_pCPlayer->Draw();
 
-		m_pBranchModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
-		m_pBranchModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
+    Geometory::SetView(m_pCamera->GetViewMatrix());
+    Geometory::SetProjection(m_pCamera->GetProjectionMatrix());
 
-		for (int i = 0; i < m_pBranchModel->GetMeshNum(); ++i) {
-			Model::Mesh mesh = *m_pBranchModel->GetMesh(i);
-			Model::Material material = *m_pBranchModel->GetMaterial(mesh.materialID);
-			ShaderList::SetMaterial(material);
-			m_pBranchModel->Draw(i);
-		}
-	}
+    DrawBoxTransform(1, 1, -5, 20, 0.5f, 5, 0, 0, 0);
+    DrawBoxTransform(1, 1.5f, -7.5f, 20, -0.5f, -0.5f, 0, 0, 0);
+    DrawBoxTransform(1, 1.5f, -2.5f, 20, -0.5f, -0.5f, 0, 0, 0);
 
-	//
-	{
-		DirectX::XMMATRIX worldBush = DirectX::XMMatrixTranslation(m_bushPos.x, m_bushPos.y,m_bushPos.z);
-		DirectX::XMStoreFloat4x4(&fwvp[0], DirectX::XMMatrixTranspose(worldBush));
+    m_pBlock->Draw();
 
-		ShaderList::SetWVP(fwvp);
+    // ===== UI =====
+    SetDepthTest(false);
 
-		m_pBushModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
-		m_pBushModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
+    DirectX::XMFLOAT4X4 uiWVP[3];
 
-		for (int i = 0; i < m_pBushModel->GetMeshNum(); ++i) {
-			Model::Mesh mesh = *m_pBushModel->GetMesh(i);
-			Model::Material material = *m_pBushModel->GetMaterial(mesh.materialID);
-			ShaderList::SetMaterial(material);
-			m_pBushModel->Draw(i);
-		}
-	}
+    // World = Identity
+    DirectX::XMStoreFloat4x4(
+        &uiWVP[0],
+        DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity())
+    );
 
+    // View = Identity
+    uiWVP[1] =
+    {
+        1,0,0,0,
+        0,1,0,0,
+        0,0,1,0,
+        0,0,0,1
+    };
 
-	
-	m_pCPlayer->Draw();
+    constexpr float SCREEN_W = 1280.0f;
+    constexpr float SCREEN_H = 720.0f;
 
-	// ÉVÉFÅ[É_Å[ê›íË
-	m_pBranchModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
-	m_pBranchModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
+    DirectX::XMMATRIX ortho =
+        DirectX::XMMatrixOrthographicOffCenterLH(
+            0.0f,        // left
+            SCREEN_W,    // right
+            SCREEN_H,    // bottom
+            0.0f,        // top
+            0.0f,        // near
+            1.0f         // far
+        );
 
+    DirectX::XMStoreFloat4x4(
+        &uiWVP[2],
+        DirectX::XMMatrixTranspose(ortho)
+    );
 
-	
+    ShaderList::SetWVP(uiWVP);
 
-	Geometory::SetView(m_pCamera->GetViewMatrix());
-	Geometory::SetProjection(m_pCamera->GetProjectionMatrix());
+    DirectX::XMFLOAT4X4 view, proj;
 
-	//ínñ 
-	static float rad = 0.05f;
+    DirectX::XMStoreFloat4x4(
+        &view,
+        DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity())
+    );
 
-	//1Ç¬ñ⁄ÇÃínñ 
-	DrawBoxTransform(1.0f, 1.0f, -5.0f, 20.0f, 0.5f, 5.0f, 0.0f, 0.0f, 0.0f);//X,Y,Z,SX,SY,SZ,rX,rY,rZ
+    DirectX::XMStoreFloat4x4(
+        &proj,
+        DirectX::XMMatrixTranspose(
+            DirectX::XMMatrixOrthographicOffCenterLH(
+                0.0f,
+                (float)SCREEN_WIDTH,
+                (float)SCREEN_HEIGHT,
+                0.0f,
+                0.0f,
+                1.0f
+            )
+        )
+    );
 
-    //DrawBoxTransform(1.0f, 1.0f, 1.0f, 0.5f, 0.5f, 0.5f, 0.0f, rad, 0.0f);
+    Sprite::SetView(view);
+    Sprite::SetProjection(proj);
 
+    // ===== UI =====
+    SetDepthTest(false);
 
-	DrawBoxTransform(1.0f, 1.5f, -7.5f, 20.0f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f);
-	DrawBoxTransform(1.0f, 1.5f, -2.5f, 20.0f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f);
-   /* DrawBoxTransform(-1.0f, 1.0f, 5.0f, 5.0f, 0.5f, 5.0f, 0.0f, 0.0f, 0.0f);
+    // ===== UI PASS: force safe states =====
 
-	DrawBoxTransform(-2.0f, 1.0f, 8.0f, 5.0f, 0.5f, 4.5f, 0.0f, 0.0f, 0.0f);*/
+// 1) –í–µ—Ä–Ω—É—Ç—å —Ä–µ–Ω–¥–µ—Ä –≤ backbuffer (–Ω–∞ –≤—Å—è–∫–∏–π —Å–ª—É—á–∞–π)
+    RenderTarget* rtv = GetDefaultRTV();
+    DepthStencil* dsv = GetDefaultDSV();
+    SetRenderTargets(1, &rtv, dsv);
 
-	rad += 0.05f;
+    // 2) –í–µ—Ä–Ω—É—Ç—å viewport –Ω–∞ –≤–µ—Å—å —ç–∫—Ä–∞–Ω (–Ω–∞ –≤—Å—è–∫–∏–π —Å–ª—É—á–∞–π)
+    D3D11_VIEWPORT vp = {};
+    vp.TopLeftX = 0.0f;
+    vp.TopLeftY = 0.0f;
+    vp.Width = (float)SCREEN_WIDTH;
+    vp.Height = (float)SCREEN_HEIGHT;
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    GetContext()->RSSetViewports(1, &vp);
 
-	m_pBlock->Draw();
+    // 3) –í—ã–∫–ª—é—á–∏—Ç—å depth
+    SetDepthTest(false);
 
-	// ===== Ç±Ç±Ç©ÇÁ UI =====
-	SetDepthTest(false);     
-	
-	m_pGaugeUI->Draw();   
+    // 4) –û—Ç–∫–ª—é—á–∏—Ç—å culling (–ö–õ–Æ–ß–ï–í–û)
+    static ID3D11RasterizerState* rsNoCull = nullptr;
+    if (!rsNoCull)
+    {
+        D3D11_RASTERIZER_DESC rd = {};
+        rd.FillMode = D3D11_FILL_SOLID;
+        rd.CullMode = D3D11_CULL_NONE;
+        rd.DepthClipEnable = TRUE;
+        HRESULT hr = GetDevice()->CreateRasterizerState(&rd, &rsNoCull);
+        if (FAILED(hr))
+            MessageBox(nullptr, "CreateRasterizerState failed", "Error", MB_OK);
+    }
+    GetContext()->RSSetState(rsNoCull);
 
-	SetDepthTest(true);
+    // 5) (–∂–µ–ª–∞—Ç–µ–ª—å–Ω–æ) –≤–µ—Ä–Ω—É—Ç—å blend state (–µ—Å–ª–∏ –≤–¥—Ä—É–≥ –∫—Ç–æ-—Ç–æ —Å–¥–µ–ª–∞–ª depth-only / no color write)
+    GetContext()->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
-}
+    // 6) –ò —Ç–æ–ª—å–∫–æ —Ç–µ–ø–µ—Ä—å —Ä–∏—Å–æ–≤–∞—Ç—å UI
+    m_pGaugeUI->Draw();
 
+    // 7) –í–µ—Ä–Ω—É—Ç—å depth –µ—Å–ª–∏ –Ω—É–∂–Ω–æ
+    SetDepthTest(true);
+};
