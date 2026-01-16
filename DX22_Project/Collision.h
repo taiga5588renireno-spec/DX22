@@ -1,26 +1,25 @@
-
-#pragma once
+ï»¿#pragma once
 #include <DirectXMath.h>
 
-class Collision {
+class Collision
+{
 public:
-
-    //--- —§•û‘Ì
-    struct Box {
-        DirectX::XMFLOAT3 center; // ’†SÀ•W
-        DirectX::XMFLOAT3 size;   // ƒTƒCƒY
+    struct Box
+    {
+        DirectX::XMFLOAT3 center;
+        DirectX::XMFLOAT3 size;
     };
 
-    //--- ‹…
-    struct Sphere {
-        DirectX::XMFLOAT3 center; // ’†SÀ•W
-        float radius;             // ”¼Œa
+    struct Sphere
+    {
+        DirectX::XMFLOAT3 center;
+        float radius;
     };
 
-    //--- Œ‹‰Ê
-    struct Result {
-        bool isHit;
-        DirectX::XMFLOAT3 dir; // ’µ‚Ë•Ô‚è•ûŒü
+    struct Result
+    {
+        bool isHit = false;
+        DirectX::XMFLOAT3 dir = { 0.0f, 0.0f, 0.0f };
     };
 
 public:

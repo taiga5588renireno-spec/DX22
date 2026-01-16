@@ -1,109 +1,62 @@
-//Collision.cpp
-#include "Collision.h"
+Ôªø#include "Collision.h"
+#include <cmath>
 
-using namespace DirectX;
-
-//=====================================================
-// óßï˚ëÃÅiAABBÅjìØémÇÃìñÇΩÇËîªíË
-//=====================================================
 Collision::Result Collision::Hit(Box a, Box b)
 {
-    Result out = {};
+    Result out{};
 
+    const float aHx = a.size.x * 0.5f;
+    const float aHy = a.size.y * 0.5f;
+    const float aHz = a.size.z * 0.5f;
 
-    // åvéZópÇ…ïœä∑
-    XMVECTOR vPosA = XMLoadFloat3(&a.center);
-    XMVECTOR vPosB = XMLoadFloat3(&b.center);
-    XMVECTOR vSizeA = XMLoadFloat3(&a.size);
-    XMVECTOR vSizeB = XMLoadFloat3(&b.size);
+    const float bHx = b.size.x * 0.5f;
+    const float bHy = b.size.y * 0.5f;
+    const float bHz = b.size.z * 0.5f;
 
-    // îºÉTÉCÉYÇ÷
-    vSizeA = XMVectorScale(vSizeA, 0.5f);
-    vSizeB = XMVectorScale(vSizeB, 0.5f);
+    const float dx = a.center.x - b.center.x;
+    const float px = (aHx + bHx) - std::fabs(dx);
+    if (px <= 0.0f) return out;
 
-    // ç≈ëÂílÅEç≈è¨íl
-    XMVECTOR vMaxA = XMVectorAdd(vPosA, vSizeA);
-    XMVECTOR vMinA = XMVectorSubtract(vPosA, vSizeA);
-    XMVECTOR vMaxB = XMVectorAdd(vPosB, vSizeB);
-    XMVECTOR vMinB = XMVectorSubtract(vPosB, vSizeB);
+    const float dy = a.center.y - b.center.y;
+    const float py = (aHy + bHy) - std::fabs(dy);
+    if (py <= 0.0f) return out;
 
-    XMFLOAT3 maxA, minA, maxB, minB;
-    XMStoreFloat3(&maxA, vMaxA);
-    XMStoreFloat3(&minA, vMinA);
-    XMStoreFloat3(&maxB, vMaxB);
-    XMStoreFloat3(&minB, vMinB);
+    const float dz = a.center.z - b.center.z;
+    const float pz = (aHz + bHz) - std::fabs(dz);
+    if (pz <= 0.0f) return out;
 
-    out.isHit = false;
-    if (maxA.x >= minB.x && minA.x <= maxB.x)
-    {
-        if (maxA.y >= minB.y && minA.y <= maxB.y)
-        {
-            if (maxA.z >= minB.z && minA.z <= maxB.z)
-            {
-                out.isHit = true;
+    out.isHit = true;
 
-                /*DirectX::XMVECTOR vDist = 
-                    DirectX::XMVectorSubtract(vPosA, vPosB);
-                vDist = DirectX::XMVectorAbs(vDist);
+    if (px <= py && px <= pz)
+        out.dir = { (dx < 0.0f ? -1.0f : 1.0f), 0.0f, 0.0f };
+    else if (py <= px && py <= pz)
+        out.dir = { 0.0f, (dy < 0.0f ? -1.0f : 1.0f), 0.0f };
+    else
+        out.dir = { 0.0f, 0.0f, (dz < 0.0f ? -1.0f : 1.0f) };
 
-                DirectX::XMVECTOR vSumsize =
-                    DirectX::XMVectorAdd(vSizeA,vSizeB);
-
-                DirectX::XMVECTOR vOverIap =
-                    DirectX::XMVectorSubtract(vSumsize, vDist);
-
-                DirectX::XMFLOAT3 overIap;
-                DirectX::XMStoreFloat3(&overIap,vOverIap);*/
-
-
-               /* if (overIap.x < overIap.y) {
-                    if (overIap.x < overIap.z)
-                    {
-                        out.dir = { a.center.x < b.center.x ? -1.0f : 1.0f,0.0f,0.0f };
-                    }
-                    else
-                        out.dir = { 0.0f,0.0f,a.center.z < b.center.z ? -1.0f : 1.0f };
-                }
-                else {
-                    if (overIap.y < overIap.z)
-                        out.dir = { 0.0f,a.center.y < b.center.y ? -1.0f : 1.0f,0.0f };
-                    else
-                        out.dir = { 0.0f,0.0f,a.center.z < b.center.z ? -1.0f : 1.0f };
-                }*/
-                
-
-            }
-        }
-    }
-
-    //out.dir = { 0.0f, 0.0f, 0.0f };
     return out;
 }
 
-
-
-//=====================================================
-// ãÖìØémÇÃìñÇΩÇËîªíË
-//=====================================================
 Collision::Result Collision::Hit(Sphere a, Sphere b)
 {
     Result out{};
-    
-    // íÜêSç¿ïW
-    XMVECTOR vPosA = XMLoadFloat3(&a.center);
-    XMVECTOR vPosB = XMLoadFloat3(&b.center);
 
-    // ãóó£ÉxÉNÉgÉã
-    XMVECTOR vDist = XMVectorSubtract(vPosA, vPosB);
+    const float dx = a.center.x - b.center.x;
+    const float dy = a.center.y - b.center.y;
+    const float dz = a.center.z - b.center.z;
 
-    // í∑Ç≥
-    XMVECTOR vLen = XMVector3Length(vDist);
-    float length;
-    XMStoreFloat(&length, vLen);
+    const float distSq = dx * dx + dy * dy + dz * dz;
+    const float r = a.radius + b.radius;
 
-    out.isHit = (a.radius + b.radius >= length);
+    if (distSq > r * r) return out;
 
-   
+    out.isHit = true;
+
+    const float dist = std::sqrt(distSq);
+    if (dist > 0.00001f)
+        out.dir = { dx / dist, dy / dist, dz / dist };
+    else
+        out.dir = { 1.0f, 0.0f, 0.0f };
 
     return out;
 }

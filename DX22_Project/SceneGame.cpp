@@ -8,11 +8,9 @@
 #include "Block.h"
 #include "Sprite.h"
 #include "Defines.h"
+#include "Collision.h"
 
-// ===============================
-// Utility
-// ===============================
-void DrawBoxTransform(
+static void DrawBoxTransform(
     float moveX, float moveY, float moveZ,
     float scaleX, float scaleY, float scaleZ,
     float rotX, float rotY, float rotZ)
@@ -35,9 +33,6 @@ void DrawBoxTransform(
     Geometory::DrawBox();
 }
 
-// ===============================
-// SceneGame
-// ===============================
 SceneGame::SceneGame()
 {
     m_pModel = new Model();
@@ -47,7 +42,6 @@ SceneGame::SceneGame()
     m_pBlock = new Block({ 10.0f,8.0f,8.0f });
     m_pBlock->SetPos({ 0.0f,0.5f,-8.0f });
 
-    // [UI FIX] UI生成はここでOK
     m_pGaugeUI = new GaugeUI();
 
     if (!m_pBranchModel->Load("Assets/Model/LowPolyNature/Tree_02.fbx", 0.0125f))
@@ -64,12 +58,6 @@ SceneGame::SceneGame()
 
     m_pCPlayer = new CPlayer();
     m_pCPlayer->SetCamera(m_pCamera);
-
-    // --- 3D描画設定 ---
-    RenderTarget* pRTV = GetDefaultRTV();
-    DepthStencil* pDSV = GetDefaultDSV();
-    SetRenderTargets(1, &pRTV, pDSV);
-    SetDepthTest(true);
 }
 
 SceneGame::~SceneGame()
@@ -96,17 +84,32 @@ void SceneGame::Update()
     if (result.isHit)
     {
         if (result.dir.x != 0.0f) m_pCPlayer->Bound(CPlayer::BoundX);
-        if (result.dir.y != 0.0f) m_pCPlayer->Bound(CPlayer::BoundY);
-        if (result.dir.z != 0.0f) m_pCPlayer->Bound(CPlayer::BoundZ);
+        else if (result.dir.y != 0.0f) m_pCPlayer->Bound(CPlayer::BoundY);
+        else if (result.dir.z != 0.0f) m_pCPlayer->Bound(CPlayer::BoundZ);
     }
 }
 
 void SceneGame::Draw()
 {
     using namespace DirectX;
-    // ===============================
-    // 3D描画
-    // ===============================
+
+    RenderTarget* rtv = GetDefaultRTV();
+    DepthStencil* dsv = GetDefaultDSV();
+    SetRenderTargets(1, &rtv, dsv);
+    SetDepthTest(true);
+
+    GetContext()->RSSetState(nullptr);
+    GetContext()->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+
+    D3D11_VIEWPORT vp = {};
+    vp.TopLeftX = 0.0f;
+    vp.TopLeftY = 0.0f;
+    vp.Width = (float)SCREEN_WIDTH;
+    vp.Height = (float)SCREEN_HEIGHT;
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    GetContext()->RSSetViewports(1, &vp);
+
     XMFLOAT4X4 fwvp[3];
     XMMATRIX world = XMMatrixIdentity();
 
@@ -116,11 +119,13 @@ void SceneGame::Draw()
 
     ShaderList::SetWVP(fwvp);
 
+    Geometory::SetView(fwvp[1]);
+    Geometory::SetProjection(fwvp[2]);
+
     XMFLOAT3 m_redPos = { 0.0f, 0.0f, 0.0f };
     XMFLOAT3 m_branchPos = { -4.0f, 1.25f, -6.0f };
     XMFLOAT3 m_bushPos = { -3.0f, 1.5f, -6.0f };
 
-    // --- 赤身 ---
     {
         XMMATRIX w = XMMatrixTranslation(m_redPos.x, m_redPos.y, m_redPos.z);
         XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
@@ -138,7 +143,6 @@ void SceneGame::Draw()
         }
     }
 
-    // --- 枝 ---
     {
         XMMATRIX w = XMMatrixTranslation(m_branchPos.x, m_branchPos.y, m_branchPos.z);
         XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
@@ -156,7 +160,6 @@ void SceneGame::Draw()
         }
     }
 
-    // --- 石 ---
     {
         XMMATRIX w = XMMatrixTranslation(m_bushPos.x, m_bushPos.y, m_bushPos.z);
         XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
@@ -176,27 +179,21 @@ void SceneGame::Draw()
 
     m_pCPlayer->Draw();
 
-    Geometory::SetView(m_pCamera->GetViewMatrix());
-    Geometory::SetProjection(m_pCamera->GetProjectionMatrix());
-
     DrawBoxTransform(1, 1, -5, 20, 0.5f, 5, 0, 0, 0);
     DrawBoxTransform(1, 1.5f, -7.5f, 20, -0.5f, -0.5f, 0, 0, 0);
     DrawBoxTransform(1, 1.5f, -2.5f, 20, -0.5f, -0.5f, 0, 0, 0);
 
     m_pBlock->Draw();
 
-    // ===== UI =====
     SetDepthTest(false);
 
     DirectX::XMFLOAT4X4 uiWVP[3];
 
-    // World = Identity
     DirectX::XMStoreFloat4x4(
         &uiWVP[0],
         DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity())
     );
 
-    // View = Identity
     uiWVP[1] =
     {
         1,0,0,0,
@@ -205,74 +202,29 @@ void SceneGame::Draw()
         0,0,0,1
     };
 
-    constexpr float SCREEN_W = 1280.0f;
-    constexpr float SCREEN_H = 720.0f;
-
     DirectX::XMMATRIX ortho =
         DirectX::XMMatrixOrthographicOffCenterLH(
-            0.0f,        // left
-            SCREEN_W,    // right
-            SCREEN_H,    // bottom
-            0.0f,        // top
-            0.0f,        // near
-            1.0f         // far
+            0.0f,
+            (float)SCREEN_WIDTH,
+            (float)SCREEN_HEIGHT,
+            0.0f,
+            0.0f,
+            1.0f
         );
 
-    DirectX::XMStoreFloat4x4(
-        &uiWVP[2],
-        DirectX::XMMatrixTranspose(ortho)
-    );
-
+    DirectX::XMStoreFloat4x4(&uiWVP[2], DirectX::XMMatrixTranspose(ortho));
     ShaderList::SetWVP(uiWVP);
 
     DirectX::XMFLOAT4X4 view, proj;
-
-    DirectX::XMStoreFloat4x4(
-        &view,
-        DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity())
-    );
-
-    DirectX::XMStoreFloat4x4(
-        &proj,
-        DirectX::XMMatrixTranspose(
-            DirectX::XMMatrixOrthographicOffCenterLH(
-                0.0f,
-                (float)SCREEN_WIDTH,
-                (float)SCREEN_HEIGHT,
-                0.0f,
-                0.0f,
-                1.0f
-            )
-        )
-    );
-
+    DirectX::XMStoreFloat4x4(&view, DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity()));
+    DirectX::XMStoreFloat4x4(&proj, DirectX::XMMatrixTranspose(ortho));
     Sprite::SetView(view);
     Sprite::SetProjection(proj);
 
-    // ===== UI =====
-    SetDepthTest(false);
-
-    // ===== UI PASS: force safe states =====
-
-// 1) Вернуть рендер в backbuffer (на всякий случай)
-    RenderTarget* rtv = GetDefaultRTV();
-    DepthStencil* dsv = GetDefaultDSV();
     SetRenderTargets(1, &rtv, dsv);
-
-    // 2) Вернуть viewport на весь экран (на всякий случай)
-    D3D11_VIEWPORT vp = {};
-    vp.TopLeftX = 0.0f;
-    vp.TopLeftY = 0.0f;
-    vp.Width = (float)SCREEN_WIDTH;
-    vp.Height = (float)SCREEN_HEIGHT;
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
     GetContext()->RSSetViewports(1, &vp);
-
-    // 3) Выключить depth
     SetDepthTest(false);
 
-    // 4) Отключить culling (КЛЮЧЕВО)
     static ID3D11RasterizerState* rsNoCull = nullptr;
     if (!rsNoCull)
     {
@@ -285,13 +237,10 @@ void SceneGame::Draw()
             MessageBox(nullptr, "CreateRasterizerState failed", "Error", MB_OK);
     }
     GetContext()->RSSetState(rsNoCull);
-
-    // 5) (желательно) вернуть blend state (если вдруг кто-то сделал depth-only / no color write)
     GetContext()->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
-    // 6) И только теперь рисовать UI
     m_pGaugeUI->Draw();
 
-    // 7) Вернуть depth если нужно
+    GetContext()->RSSetState(nullptr);
     SetDepthTest(true);
-};
+}

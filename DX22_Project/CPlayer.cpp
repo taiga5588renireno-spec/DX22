@@ -1,4 +1,4 @@
-#include "CPlayer.h"
+ï»¿#include "CPlayer.h"
 #include "Input.h"
 #include "Geometory.h"
 #include <DirectXMath.h>
@@ -9,30 +9,33 @@
 #include "Defines.h"
 
 using namespace std;
- 
 
-enum eShotStep {
+enum eShotStep
+{
     SHOT_WAIT,
     SHOT_KEEP,
     SHOT_RELEASE,
 };
 
 CPlayer::CPlayer()
-    :m_pCamera(nullptr), m_move()
-    , m_isStop(true), m_isGround(true), m_shotStep(0), m_shotPower(0.0f)
-    ,m_collision()
-   
+    : m_pCamera(nullptr)
+    , m_move()
+    , m_isStop(true)
+    , m_isGround(true)
+    , m_shotStep(0)
+    , m_shotPower(0.0f)
+    , m_collision()
 {
-    m_collision.size = { 0.2f,0.2f,0.2f };
+    m_collision.size = { 0.2f, 0.2f, 0.2f };
 }
 
 CPlayer::~CPlayer()
 {
-
 }
+
 void CPlayer::Update()
 {
-    if (!m_pCamera){return;}
+    if (!m_pCamera) { return; }
 
     if (m_isStop)
         UpdateShot();
@@ -41,36 +44,23 @@ void CPlayer::Update()
 
     m_collision.center = m_pos;
 }
+
 void CPlayer::Draw()
 {
     using namespace DirectX;
 
-    // ƒXƒP[ƒ‹i¡‰ñ‚Í‚»‚Ì‚Ü‚Üj
     XMMATRIX S = XMMatrixScaling(1.0f, 1.0f, 1.0f);
-
-    // š Y²‚É90“x‰ñ“]
     XMMATRIX R = XMMatrixRotationY(XMConvertToRadians(90.0f));
-
-    // •½sˆÚ“®
     XMMATRIX T = XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z);
 
-    // s—ñ‡¬id—v‚È‡”Ôj
     XMMATRIX mat = S * R * T;
     mat = XMMatrixTranspose(mat);
 
+    XMFLOAT4X4 fMat;
+    XMStoreFloat4x4(&fMat, mat);
 
-
-   /* DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z);
-    DirectX::XMMATRIX mat;
-    mat = XMMatrixTranspose(T);*/
-
-    DirectX::XMFLOAT4X4 fMat;
-    DirectX::XMStoreFloat4x4(&fMat, mat);
-
-    //•`‰æ
     Geometory::SetWorld(fMat);
     Geometory::DrawBox();
-
 }
 
 void CPlayer::SetCamera(Camera* pCamera)
@@ -83,198 +73,103 @@ Collision::Box CPlayer::GetCollision()
     return m_collision;
 }
 
-//====================================
-// •`‰æ
-//====================================
-
-
-//====================================
-// ‹…‚ğ‘Å‚Âˆ—
-//====================================
 void CPlayer::UpdateShot()
+{
+    switch (m_shotStep)
     {
-        switch (m_shotStep)
+    case SHOT_WAIT:
+        if (IsKeyTrigger('Z'))
         {
-            //====================================
-            // WAITFZ ‚ğ‰Ÿ‚·‚Ì‚ğ‘Ò‚Â
-            //====================================
-        case SHOT_WAIT:
-            if (IsKeyTrigger('Z')) {
-                m_shotPower = 0.0f;   // ƒpƒ[‚ğ‚O‚ÉƒŠƒZƒbƒg 
-                m_shotStep = SHOT_KEEP;
-
-                //// ƒJƒƒ‰ˆÊ’u
-                //DirectX::XMFLOAT3 camPos = m_pCamera->GetPos();
-                //DirectX::XMVECTOR vCamPos = DirectX::XMLoadFloat3(&camPos);
-
-                //// ƒvƒŒƒCƒ„[ˆÊ’u
-                //DirectX::XMVECTOR vPos = DirectX::XMLoadFloat3(&m_pos);
-
-                //// ƒJƒƒ‰ ¨ ƒvƒŒƒCƒ„[•ûŒü
-                ////DirectX::XMVECTOR vec = DirectX::XMVectorSubtract(vPos, vCamPos);
-                //DirectX::XMVECTOR vec = DirectX::XMVectorSubtract(vPos, vCamPos);
-               
-                //// ³‹K‰»
-                //vec = DirectX::XMVector3Normalize(vec);
-
-                //// ƒpƒ[‚ğ‚©‚¯‚Ä‘¬“x‚É‚·‚é
-                //vec = DirectX::XMVectorScale(vec, m_shotPower * 1.5f);
-
-                //// ‘¬“x‚É•Û‘¶
-                //DirectX::XMStoreFloat3(&m_move, vec);
-               
-                break;
-            }
-            //====================================
-            // KEEPF‰Ÿ‚µ‚Ä‚¢‚éŠÔƒpƒ[‚ğ‚½‚ß‚é
-            //====================================
-        case SHOT_KEEP:
-            m_shotPower += 0.02f;
-            if (m_shotPower > 1.0f) m_shotPower = 0.5f;
-
-            if (IsKeyRelease('Z'))
-            {
-                m_shotStep = SHOT_RELEASE;
-            }
-            break;
-
-            //====================================
-            // RELEASEF—£‚µ‚½uŠÔ‚É”ò‚Î‚·
-            //====================================
-        case SHOT_RELEASE:
-
-           /* DirectX::XMFLOAT3 camPos = ƒJƒƒ‰‚ÌˆÊ’u‚ğæ“¾;
-            DirectX::XMVECTOR vCamPos = camPos‚ğŒvZ—p‚Ìƒf[ƒ^‚É•ÏŠ·;
-            DirectX::XMVECTOR vPos = ƒvƒŒƒCƒ„[‚ÌˆÊ’u‚ğŒvZ—p‚Ìƒf[ƒ^‚É•ÏŠ·;
-            DirectX::XMVECTOR vec = ƒJƒƒ‰‚©‚çƒvƒŒƒCƒ„[‚ÉŒü‚©‚¤ƒxƒNƒgƒ‹‚ğŒvZ;
-            vec = vec‚ğ’·‚³‚P‚ÌƒxƒNƒgƒ‹‚É•ÏŠ·;
-            vec = ’·‚³‚P‚Æ‚È‚Á‚½vec‚É‹…‚Ì‘Å‚¿‚¾‚µ‹­‚³(m_shotPower)‚ğ‚©‚¯‚é;
-            ŒvZ—p‚Ìvec‚ğƒvƒŒƒCƒ„[‚ÌˆÚ“®ƒXƒs[ƒh(“Ç‚İæ‚è—p‚Ìm_move)‚ÉŠi”[;*/
-           
-
-            //// ƒJƒƒ‰‚ÌˆÊ’u‚ğæ“¾
-            //DirectX::XMFLOAT3 camPos = 
-            //    m_pCamera->GetPos();
-
-            // ƒJƒƒ‰ˆÊ’u‚ğŒvZ—pƒf[ƒ^iXMVECTORj‚É•ÏŠ·
-           /* DirectX::XMVECTOR vCamPos =
-                DirectX::XMLoadFloat3(&camPos);*/
-
-            // ƒvƒŒƒCƒ„[‚ÌˆÊ’u‚ğŒvZ—pƒf[ƒ^‚É•ÏŠ·
-          /*  DirectX::XMVECTOR vPos = 
-                DirectX::XMLoadFloat3(&m_pos);*/
-
-                // š ƒJƒƒ‰³–Ê•ûŒü‚ğæ“¾‚·‚éi’´d—vj
-            DirectX::XMVECTOR vec = m_pCamera->GetForward();
-
-            // ”O‚Ì‚½‚ß³‹K‰»
-            vec = DirectX::XMVector3Normalize(vec);
-
-            
-
-            // ƒpƒ[‚ğŠ|‚¯‚é
-           /* vec = DirectX::XMVectorScale(vec, m_shotPower);*/
-
-            // ‘¬“x‚Æ‚µ‚Ä•Û‘¶
-            DirectX::XMStoreFloat3(&m_move, vec);
-            // vec ‚ğ³‹K‰»i’·‚³ 1 ‚Éj
-           /* vec = DirectX::XMVector3Normalize(vec);*/
-
-            // ³‹K‰»‚³‚ê‚½ vec ‚ÉƒVƒ‡ƒbƒg‹­‚³im_shotPowerj‚ğæZ
-            vec = DirectX::XMVectorScale(vec, m_shotPower);
-
-            // ŒvZŒ‹‰Ê‚ğƒvƒŒƒCƒ„[‚ÌˆÚ“®ƒXƒs[ƒh m_moveiXMFLOAT3j‚Ö‘‚«–ß‚·
-            DirectX::XMStoreFloat3(&m_move, vec);
-
-
-            m_isStop = false;
-            m_isGround = false;
-            m_shotStep = SHOT_WAIT;
-            break;
+            m_shotPower = 0.0f;
+            m_shotStep = SHOT_KEEP;
         }
-       
-    } 
+        break;
 
-    void CPlayer::UpdateMove()
+    case SHOT_KEEP:
+        m_shotPower += 0.02f;
+        if (m_shotPower > 1.0f) m_shotPower = 1.0f;
+
+        if (IsKeyRelease('Z'))
+        {
+            m_shotStep = SHOT_RELEASE;
+        }
+        break;
+
+    case SHOT_RELEASE:
     {
-        // d—Í 
-        m_move.y -= 0.02f;
+        using namespace DirectX;
 
-        // Œ¸‘¬ˆ—(‹ó‹C’ïR 
-        m_move.x *= 0.99f;
-        m_move.y *= 0.99f;
-        m_move.z *= 0.99f;
+        XMVECTOR vec = m_pCamera->GetForward();
+        vec = XMVector3Normalize(vec);
 
-        // ˆÚ“®ˆ— 
-        m_pos.x += m_move.x;
-        m_pos.y += m_move.y;
-        m_pos.z += m_move.z;
+        vec = XMVectorScale(vec, m_shotPower);
+        XMStoreFloat3(&m_move, vec);
 
-        // ’n–ÊÚG”»’è 
-        if (m_pos.y < 0.0f) {
-            m_pos.y = 0.0f;
-            Bound(BoundY);
-        }
+        m_isStop = false;
+        m_isGround = false;
+        m_shotStep = SHOT_WAIT;
+    }
+    break;
+    }
+}
 
-        // ’â~”»’è 
-        if (CheckStop()) {
-            m_isStop = true;
-            m_shotStep = SHOT_WAIT;
-        }
+void CPlayer::UpdateMove()
+{
+    m_move.y -= 0.02f;
+
+    m_move.x *= 0.99f;
+    m_move.y *= 0.99f;
+    m_move.z *= 0.99f;
+
+    m_pos.x += m_move.x;
+    m_pos.y += m_move.y;
+    m_pos.z += m_move.z;
+
+    if (m_pos.y < 0.0f)
+    {
+        m_pos.y = 0.0f;
+        Bound(BoundY);
     }
 
-        //====================================
-        // ƒoƒEƒ“ƒhˆ—
-        //====================================
-        void CPlayer::Bound(BoundAxis axis)
-        {
-            DirectX::XMFLOAT3 friction = { 0.8f, 0.8f, 0.8f };
+    if (CheckStop())
+    {
+        m_isStop = true;
+        m_shotStep = SHOT_WAIT;
+    }
+}
 
-            switch (axis) {
-                case BoundX:m_pos.x -= m_move.x;  break;
-                case BoundY: m_pos.y -= m_move.y; break;
-                case BoundZ: m_pos.z -= m_move.z; break;
-            }
+void CPlayer::Bound(BoundAxis axis)
+{
+    switch (axis)
+    {
+    case BoundX: m_pos.x -= m_move.x; break;
+    case BoundY: m_pos.y -= m_move.y; break;
+    case BoundZ: m_pos.z -= m_move.z; break;
+    }
 
-            // –€C
-           
-            switch (axis) {
-            case BoundX: friction = DirectX::XMFLOAT3(0.95f,1.0f,1.0f);  break;
-            case BoundY: friction = DirectX::XMFLOAT3(0.95f, 0.7f, 0.95f); break;
-            case BoundZ: friction = DirectX::XMFLOAT3(1.0f, 1.0f, 0.95f);  break;
-            }
+    const float bounce = 0.5f;
 
-            m_move.x *= friction.x;
-            m_move.y *= friction.y;
-            m_move.z *= friction.z;
+    switch (axis)
+    {
+    case BoundX: m_move.x = -m_move.x * bounce; break;
+    case BoundY: m_move.y = -m_move.y * bounce; break;
+    case BoundZ: m_move.z = -m_move.z * bounce; break;
+    }
 
+    if (axis == BoundY && 0.0f < m_move.y && m_move.y < 0.05f)
+    {
+        m_move.y = 0.0f;
+        m_isGround = true;
+    }
+}
 
-            // ”½“]
-            switch (axis) {
-            case BoundX: m_move.x = -m_move.x; break;
-            case BoundY: m_move.y = -m_move.y; break;
-            case BoundZ: m_move.z = -m_move.z; break;
-            }
+bool CPlayer::CheckStop()
+{
+    float speed = 0.0f;
 
-            // ’n–ÊÚ’n”»’è
-            if (0.0f < m_move.y && m_move.y < 0.05f) {
-                m_move.y = 0.0f;
-                m_isGround = true;
-            }
-        }
+    DirectX::XMVECTOR vMove = DirectX::XMLoadFloat3(&m_move);
+    DirectX::XMVECTOR vLen = DirectX::XMVector3Length(vMove);
+    DirectX::XMStoreFloat(&speed, vLen);
 
-        //====================================
-        // ’â~”»’è
-        //====================================
-        bool CPlayer::CheckStop()
-        {
-            float speed;
-            DirectX::XMVECTOR vMove = DirectX::XMLoadFloat3(&m_move);
-            DirectX::XMVECTOR vLen = DirectX::XMVector3Length(vMove);
-
-            DirectX::XMStoreFloat(&speed, vLen);
-
-            return m_isGround && speed < 0.5f;
-        }
-
-        //aaa
+    return m_isGround && speed < 0.5f;
+}
