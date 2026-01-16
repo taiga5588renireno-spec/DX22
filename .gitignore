@@ -1,0 +1,71 @@
+## ─────────────────────────────────────────────
+##  Visual Studio / C++ Game Project
+##  Shared team configuration
+## ─────────────────────────────────────────────
+
+### ローカルIDEユーザ設定（VSが好き勝手に書くゴミ）
+.vs/
+*.user
+*.suo
+*.userosscache
+*.rsuser
+
+### IntelliSense / ブラウズDB（競合とエラーの元）
+*.VC.db
+*.VC.opendb
+*.VC.db-wal
+*.VC.db-shm
+*.ipch
+
+### VS 一時ファイル / ビルド生成物
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Tt]emp/
+
+*.log
+*.tlog
+*.pdb
+*.ipdb
+*.ilk
+*.idb
+*.obj
+*.pch
+*.tmp
+*.rsp
+
+### この例外は現状維持（SweetsPrototype の .obj はアセット扱い）
+!HEWGame/Assets/Model/SweetsPrototype/*.obj
+
+### 対応済みのゴミ
+_ReSharper*/
+*.DotSettings.user
+*.ncrunch*
+*.local.xml
+*.aps
+*.opensdf
+
+### 自動生成/中間ビルドフォルダ
+[Bb]uild/
+[Bb]ld/
+[Dd]ebug*/
+[Rr]elease*/
+x64/
+x86/
+
+### 例外: 必要な外部ライブラリのバイナリはホワイトリスト
+!HEWGame/DirectXTex/Win32/Debug/**
+!HEWGame/DirectXTex/Win32/Release/**
+!HEWGame/DirectXTex/x64/Debug/**
+!HEWGame/DirectXTex/x64/Release/**
+
+### Box2D（vendored）必ず含める
+!HEWGame/box2d/
+!HEWGame/box2d/**
+
+### Box2D build の余計なサブ依存は除外
+HEWGame/box2d/build/_deps/enkits-src/
+HEWGame/box2d/build/_deps/glfw-src/
+
+!.vsconfig
