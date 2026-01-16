@@ -3,9 +3,6 @@
 #include "DirectXMath.h"
 #include "Model.h"
 #include "ShaderList.h"
-#include "CameraDebug.h"
-#include "CPlayer.h"
-#include "Block.h"
 #include "Sprite.h"
 #include "Defines.h"
 #include "Collision.h"
@@ -39,54 +36,57 @@ SceneGame::SceneGame()
     m_pBranchModel = new Model();
     m_pBushModel = new Model();
 
+    m_pCamera = new CameraDebug();
+
+    m_pCPlayer = new CPlayer();
+    m_pCPlayer->SetCamera(m_pCamera);
+
+    m_pCamera->SetTarget(m_pCPlayer);
+
     m_pBlock = new Block({ 10.0f,8.0f,8.0f });
     m_pBlock->SetPos({ 0.0f,0.5f,-8.0f });
 
     m_pGaugeUI = new GaugeUI();
 
     if (!m_pBranchModel->Load("Assets/Model/LowPolyNature/Tree_02.fbx", 0.0125f))
-    {
         MessageBox(NULL, "Branch_01 の読み込みに失敗しました。", "Error", MB_OK);
-    }
 
     if (!m_pBushModel->Load("Assets/Model/LowPolyNature/Rock_02.fbx", 0.05f))
-    {
         MessageBox(NULL, "Bush_01 の読み込みに失敗しました。", "Error", MB_OK);
-    }
-
-    m_pCamera = new CameraDebug();
-
-    m_pCPlayer = new CPlayer();
-    m_pCPlayer->SetCamera(m_pCamera);
 }
 
 SceneGame::~SceneGame()
 {
-    delete m_pBlock;        m_pBlock = nullptr;
-    delete m_pModel;        m_pModel = nullptr;
-    delete m_pCamera;       m_pCamera = nullptr;
-    delete m_pCPlayer;      m_pCPlayer = nullptr;
-    delete m_pBranchModel;  m_pBranchModel = nullptr;
-    delete m_pBushModel;    m_pBushModel = nullptr;
-    delete m_pGaugeUI;      m_pGaugeUI = nullptr;
+    delete m_pGaugeUI;     m_pGaugeUI = nullptr;
+    delete m_pBlock;       m_pBlock = nullptr;
+    delete m_pCPlayer;     m_pCPlayer = nullptr;
+    delete m_pCamera;      m_pCamera = nullptr;
+    delete m_pBushModel;   m_pBushModel = nullptr;
+    delete m_pBranchModel; m_pBranchModel = nullptr;
+    delete m_pModel;       m_pModel = nullptr;
 }
 
 void SceneGame::Update()
 {
-    m_pCamera->Update();
+    m_pCamera->UpdateInput();
+
+    m_pCamera->UpdateView();
+
     m_pCPlayer->Update();
     m_pBlock->Update();
 
     Collision::Box a = m_pCPlayer->GetCollision();
     Collision::Box b = m_pBlock->GetCollision();
-    Collision::Result result = Collision::Hit(a, b);
+    Collision::Result r = Collision::Hit(a, b);
 
-    if (result.isHit)
+    if (r.isHit)
     {
-        if (result.dir.x != 0.0f) m_pCPlayer->Bound(CPlayer::BoundX);
-        else if (result.dir.y != 0.0f) m_pCPlayer->Bound(CPlayer::BoundY);
-        else if (result.dir.z != 0.0f) m_pCPlayer->Bound(CPlayer::BoundZ);
+        if (r.dir.x != 0.0f)      m_pCPlayer->Bound(CPlayer::BoundX);
+        else if (r.dir.y != 0.0f) m_pCPlayer->Bound(CPlayer::BoundY);
+        else if (r.dir.z != 0.0f) m_pCPlayer->Bound(CPlayer::BoundZ);
     }
+
+    m_pCamera->UpdateView();
 }
 
 void SceneGame::Draw()
@@ -122,12 +122,12 @@ void SceneGame::Draw()
     Geometory::SetView(fwvp[1]);
     Geometory::SetProjection(fwvp[2]);
 
-    XMFLOAT3 m_redPos = { 0.0f, 0.0f, 0.0f };
-    XMFLOAT3 m_branchPos = { -4.0f, 1.25f, -6.0f };
-    XMFLOAT3 m_bushPos = { -3.0f, 1.5f, -6.0f };
+    XMFLOAT3 redPos = { 0.0f, 0.0f, 0.0f };
+    XMFLOAT3 branchPos = { -4.0f, 1.25f, -6.0f };
+    XMFLOAT3 bushPos = { -3.0f, 1.5f, -6.0f };
 
     {
-        XMMATRIX w = XMMatrixTranslation(m_redPos.x, m_redPos.y, m_redPos.z);
+        XMMATRIX w = XMMatrixTranslation(redPos.x, redPos.y, redPos.z);
         XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
         ShaderList::SetWVP(fwvp);
 
@@ -144,7 +144,7 @@ void SceneGame::Draw()
     }
 
     {
-        XMMATRIX w = XMMatrixTranslation(m_branchPos.x, m_branchPos.y, m_branchPos.z);
+        XMMATRIX w = XMMatrixTranslation(branchPos.x, branchPos.y, branchPos.z);
         XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
         ShaderList::SetWVP(fwvp);
 
@@ -161,7 +161,7 @@ void SceneGame::Draw()
     }
 
     {
-        XMMATRIX w = XMMatrixTranslation(m_bushPos.x, m_bushPos.y, m_bushPos.z);
+        XMMATRIX w = XMMatrixTranslation(bushPos.x, bushPos.y, bushPos.z);
         XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(w));
         ShaderList::SetWVP(fwvp);
 
@@ -187,12 +187,9 @@ void SceneGame::Draw()
 
     SetDepthTest(false);
 
-    DirectX::XMFLOAT4X4 uiWVP[3];
+    XMFLOAT4X4 uiWVP[3];
 
-    DirectX::XMStoreFloat4x4(
-        &uiWVP[0],
-        DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity())
-    );
+    XMStoreFloat4x4(&uiWVP[0], XMMatrixTranspose(XMMatrixIdentity()));
 
     uiWVP[1] =
     {
@@ -202,8 +199,8 @@ void SceneGame::Draw()
         0,0,0,1
     };
 
-    DirectX::XMMATRIX ortho =
-        DirectX::XMMatrixOrthographicOffCenterLH(
+    XMMATRIX ortho =
+        XMMatrixOrthographicOffCenterLH(
             0.0f,
             (float)SCREEN_WIDTH,
             (float)SCREEN_HEIGHT,
@@ -212,18 +209,14 @@ void SceneGame::Draw()
             1.0f
         );
 
-    DirectX::XMStoreFloat4x4(&uiWVP[2], DirectX::XMMatrixTranspose(ortho));
+    XMStoreFloat4x4(&uiWVP[2], XMMatrixTranspose(ortho));
     ShaderList::SetWVP(uiWVP);
 
-    DirectX::XMFLOAT4X4 view, proj;
-    DirectX::XMStoreFloat4x4(&view, DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity()));
-    DirectX::XMStoreFloat4x4(&proj, DirectX::XMMatrixTranspose(ortho));
+    XMFLOAT4X4 view, proj;
+    XMStoreFloat4x4(&view, XMMatrixTranspose(XMMatrixIdentity()));
+    XMStoreFloat4x4(&proj, XMMatrixTranspose(ortho));
     Sprite::SetView(view);
     Sprite::SetProjection(proj);
-
-    SetRenderTargets(1, &rtv, dsv);
-    GetContext()->RSSetViewports(1, &vp);
-    SetDepthTest(false);
 
     static ID3D11RasterizerState* rsNoCull = nullptr;
     if (!rsNoCull)

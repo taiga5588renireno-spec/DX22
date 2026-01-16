@@ -1,14 +1,8 @@
 ﻿#include "CPlayer.h"
-#include "Input.h"
 #include "Geometory.h"
 #include <DirectXMath.h>
-#include "GaneObject.h"
-#include "CameraDebug.h"
-#include "SceneGame.h"
-#include "Camera.h"
-#include "Defines.h"
 
-using namespace std;
+using namespace DirectX;
 
 enum eShotStep
 {
@@ -19,23 +13,29 @@ enum eShotStep
 
 CPlayer::CPlayer()
     : m_pCamera(nullptr)
-    , m_move()
+    , m_move(0.0f, 0.0f, 0.0f)
     , m_isStop(true)
     , m_isGround(true)
-    , m_shotStep(0)
+    , m_shotStep(SHOT_WAIT)
     , m_shotPower(0.0f)
     , m_collision()
 {
     m_collision.size = { 0.2f, 0.2f, 0.2f };
+    m_collision.center = m_pos;
 }
 
 CPlayer::~CPlayer()
 {
 }
 
+void CPlayer::SetCamera(Camera* pCamera)
+{
+    m_pCamera = pCamera;
+}
+
 void CPlayer::Update()
 {
-    if (!m_pCamera) { return; }
+    if (!m_pCamera) return;
 
     if (m_isStop)
         UpdateShot();
@@ -47,8 +47,6 @@ void CPlayer::Update()
 
 void CPlayer::Draw()
 {
-    using namespace DirectX;
-
     XMMATRIX S = XMMatrixScaling(1.0f, 1.0f, 1.0f);
     XMMATRIX R = XMMatrixRotationY(XMConvertToRadians(90.0f));
     XMMATRIX T = XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z);
@@ -61,11 +59,6 @@ void CPlayer::Draw()
 
     Geometory::SetWorld(fMat);
     Geometory::DrawBox();
-}
-
-void CPlayer::SetCamera(Camera* pCamera)
-{
-    m_pCamera = pCamera;
 }
 
 Collision::Box CPlayer::GetCollision()
@@ -97,13 +90,19 @@ void CPlayer::UpdateShot()
 
     case SHOT_RELEASE:
     {
-        using namespace DirectX;
+        XMVECTOR dir = m_pCamera->GetForward();
 
-        XMVECTOR vec = m_pCamera->GetForward();
-        vec = XMVector3Normalize(vec);
+        XMFLOAT3 f;
+        XMStoreFloat3(&f, dir);
+        f.y = 0.0f;
 
-        vec = XMVectorScale(vec, m_shotPower);
-        XMStoreFloat3(&m_move, vec);
+        XMVECTOR flat = XMLoadFloat3(&f);
+        flat = XMVector3Normalize(flat);
+
+        const float baseSpeed = 2.0f;
+        flat = XMVectorScale(flat, m_shotPower * baseSpeed);
+
+        XMStoreFloat3(&m_move, flat);
 
         m_isStop = false;
         m_isGround = false;
@@ -156,20 +155,22 @@ void CPlayer::Bound(BoundAxis axis)
     case BoundZ: m_move.z = -m_move.z * bounce; break;
     }
 
-    if (axis == BoundY && 0.0f < m_move.y && m_move.y < 0.05f)
+    if (axis == BoundY && m_move.y > 0.0f && m_move.y < 0.05f)
     {
         m_move.y = 0.0f;
         m_isGround = true;
     }
+
+    m_collision.center = m_pos;
 }
 
 bool CPlayer::CheckStop()
 {
     float speed = 0.0f;
 
-    DirectX::XMVECTOR vMove = DirectX::XMLoadFloat3(&m_move);
-    DirectX::XMVECTOR vLen = DirectX::XMVector3Length(vMove);
-    DirectX::XMStoreFloat(&speed, vLen);
+    XMVECTOR vMove = XMLoadFloat3(&m_move);
+    XMVECTOR vLen = XMVector3Length(vMove);
+    XMStoreFloat(&speed, vLen);
 
     return m_isGround && speed < 0.5f;
 }

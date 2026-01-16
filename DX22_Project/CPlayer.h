@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #ifndef __PLAYER_H__
 #define __PLAYER_H__
 
@@ -10,19 +10,19 @@
 
 class CPlayer : public GameObject
 {
-
 private:
-    //--- Šeíƒƒ“ƒo[•Ï” 
-    Camera* m_pCamera;         // ƒ{[ƒ‹‚ğ’Ç‚¢‚©‚¯‚éƒJƒƒ‰‚Ìî•ñ 
-    DirectX::XMFLOAT3 m_move;  // ƒ{[ƒ‹‚ÌˆÚ“®‘¬“x 
-    bool     m_isStop;         // ƒ{[ƒ‹‚Ì’â~”»’è 
-    bool     m_isGround;       // ’n–ÊÚ’n”»’è 
-    int     m_shotStep;        //ƒ{[ƒ‹‚Ìˆ—è‡ 
-    float    m_shotPower;      //ƒ{[ƒ‹‚Ì‘Å‚¿o‚µ‹­‚³ 
+    Camera* m_pCamera;
+
+    DirectX::XMFLOAT3 m_move;
+    bool  m_isStop;
+    bool  m_isGround;
+
+    int   m_shotStep;
+    float m_shotPower;
+
     Collision::Box m_collision;
 
 public:
-    // ƒoƒEƒ“ƒh•ûŒü‚Ì’è‹`i‹³Ş‚Æ“¯‚¶j
     enum BoundAxis {
         BoundX,
         BoundY,
@@ -30,32 +30,23 @@ public:
     };
 
 public:
-    //Šî–{‚Ìˆ—
     CPlayer();
-       
     ~CPlayer();
 
-    //XVˆ—
     void Update();
-    //•`‰æ
     void Draw();
-    
-    //ƒJƒƒ‰İ’è
-    void SetCamera(Camera* pCamera);//{ m_pCamera = pCamera; }
 
+    void SetCamera(Camera* pCamera);
 
     Collision::Box GetCollision();
 
 public:
     void Bound(BoundAxis axis);
-   
+
 private:
     bool CheckStop();
     void UpdateShot();
     void UpdateMove();
-   
-    
-
 };
 
 #endif

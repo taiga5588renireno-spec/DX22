@@ -1,80 +1,61 @@
-#include "CameraDebug.h"
-
+Ôªø#include "CameraDebug.h"
+#include "GaneObject.h"
 #include <cmath>
 
 CameraDebug::CameraDebug()
-    : m_radXZ(0.0f), m_radY(0.3f), m_radius(15.0f)
+    : m_radXZ(0.0f)
+    , m_radY(0.35f)
+    , m_radius(12.0f)
 {
     m_look = { 0.0f, 0.2f, 0.0f };
-    
+
+    DirectX::XMStoreFloat4x4(&m_view, DirectX::XMMatrixIdentity());
 }
 
-void CameraDebug::Update()
+void CameraDebug::UpdateInput()
 {
     const float rotSpeed = 0.02f;
-    const float moveSpeed = 0.5f;
+    const float zoomSpeed = 0.5f;
 
-  
-    float speed = moveSpeed;
+    const float mul = IsKeyPress(VK_SHIFT) ? 2.5f : 1.0f;
 
+    if (IsKeyPress('A') || IsKeyPress(VK_LEFT))  m_radXZ -= rotSpeed * mul;
+    if (IsKeyPress('D') || IsKeyPress(VK_RIGHT)) m_radXZ += rotSpeed * mul;
+
+    if (IsKeyPress('W') || IsKeyPress(VK_UP))    m_radY += rotSpeed * mul;
+    if (IsKeyPress('S') || IsKeyPress(VK_DOWN))  m_radY -= rotSpeed * mul;
+
+    if (IsKeyPress('Q')) m_radius -= zoomSpeed * mul;
+    if (IsKeyPress('E')) m_radius += zoomSpeed * mul;
+
+    if (m_radY < -1.2f) m_radY = -1.2f;
+    if (m_radY > 1.2f) m_radY = 1.2f;
+
+    if (m_radius < 3.0f)  m_radius = 3.0f;
+    if (m_radius > 50.0f) m_radius = 50.0f;
+}
+
+void CameraDebug::UpdateView()
+{
     using namespace DirectX;
 
-    XMVECTOR forward = GetForward();
-    XMVECTOR up = XMVectorSet(0, 1, 0, 0);
-    XMVECTOR right = XMVector3Normalize(XMVector3Cross(up, forward));
 
-    XMVECTOR look = XMLoadFloat3(&m_look);
+    if (m_pTarget)
+    {
+        m_look = m_pTarget->GetPos();
+        m_look.y += 0.2f; 
+    }
 
-    float dashMul = IsKeyPress(VK_SHIFT) ? 4.0f : 1.0f;
-    speed = moveSpeed * dashMul;
-
-
-    if (IsKeyPress('W')) look += forward * speed;
-    if (IsKeyPress('S')) look -= forward * speed;
-    if (IsKeyPress('A')) look -= right * speed;
-    if (IsKeyPress('D')) look += right * speed;
-
-
-
-    XMStoreFloat3(&m_look, look);
-
-
-    // îÕàÕêßå¿
-    if (m_radius < 3.0f) m_radius = 3.0f;
-    if (m_radius > 50.0f) m_radius = 50.0f;
-
-
-    // sin, cosÇ≈ÉJÉÅÉâà íuÇåvéZÅiíçéãì_íÜêSÇÃâÒì]Åj
     m_pos.x = cosf(m_radY) * sinf(m_radXZ) * m_radius + m_look.x;
     m_pos.y = sinf(m_radY) * m_radius + m_look.y;
     m_pos.z = cosf(m_radY) * cosf(m_radXZ) * m_radius + m_look.z;
 
-
-    DirectX::XMMATRIX view =
-        DirectX::XMMatrixLookAtLH(
-            DirectX::XMVectorSet(m_pos.x, m_pos.y, m_pos.z, 1.0f),
-            DirectX::XMVectorSet(m_look.x, m_look.y, m_look.z, 1.0f),
-            DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
+    XMMATRIX view =
+        XMMatrixLookAtLH(
+            XMVectorSet(m_pos.x, m_pos.y, m_pos.z, 1.0f),
+            XMVectorSet(m_look.x, m_look.y, m_look.z, 1.0f),
+            XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
         );
 
-    DirectX::XMStoreFloat4x4(&m_view, view);
-
-   
-   
-
- 
- 
-}
-
-DirectX::XMVECTOR CameraDebug::GetForward() const
-{
-    using namespace DirectX;
-
-    XMVECTOR look = XMLoadFloat3(&m_look);
-    XMVECTOR pos = XMLoadFloat3(&m_pos);
-
-    // Åö å¸Ç´ÇîΩì]
-    XMVECTOR forward = XMVectorSubtract(look, pos);
-
-    return XMVector3Normalize(forward);
+    XMStoreFloat4x4(&m_view, XMMatrixTranspose(view));
 }

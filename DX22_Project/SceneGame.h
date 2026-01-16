@@ -1,10 +1,9 @@
-#ifndef __SCENE_GAME_H__
+Ôªø#ifndef __SCENE_GAME_H__
 #define __SCENE_GAME_H__
 
 #include "Scene.h"
-#include "Camera.h"
 #include "model.h"
-#include "Camera.h"
+#include "CameraDebug.h"
 #include "CPlayer.h"
 #include "Block.h"
 #include "GaugeUI.h"
@@ -12,27 +11,24 @@
 class SceneGame : public Scene
 {
 public:
-	SceneGame();
-	~SceneGame();
-	void Update() final;
-	void Draw() final;
-	Collision::Box m_wallCollision;
+    SceneGame();
+    ~SceneGame();
+
+    void Update() final;
+    void Draw() final;
+
+    Collision::Box m_wallCollision;
+
 private:
-	Model* m_pModel;
+    Model* m_pModel = nullptr;
+    Model* m_pBranchModel = nullptr;
+    Model* m_pBushModel = nullptr;
 
-	Model* m_pBranchModel;
+    CameraDebug* m_pCamera = nullptr;
+    CPlayer* m_pCPlayer = nullptr;
 
-	Model* m_pBushModel;
-
-	Camera* m_pCamera;
-
-	CPlayer* m_pCPlayer;
-
-	Block* m_pBlock;   // Å© ïœêî
-
-
-	GaugeUI* m_pGaugeUI;
+    Block* m_pBlock = nullptr;
+    GaugeUI* m_pGaugeUI = nullptr;
 };
 
-#endif // __SCENE_GAME_H__
-
+#endif
