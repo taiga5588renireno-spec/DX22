@@ -1,4 +1,4 @@
-#include "Goal.h"
+ï»¿#include "Goal.h"
 #include "Sprite.h"
 #include <DirectXMath.h>
 #include "Collision.h"
@@ -26,53 +26,39 @@ Goal::~Goal()
 }
 void Goal::Update()
 {
-    // PDF‚Å‚ÍÚ×È—ªi•K—v‚È‚çã‰º‚É‚Ó‚í‚Ó‚í‚³‚¹‚éˆ—‚È‚Çj
+    // PDFã§ã¯è©³ç´°çœç•¥ï¼ˆå¿…è¦ãªã‚‰ä¸Šä¸‹ã«ãµã‚ãµã‚ã•ã›ã‚‹å‡¦ç†ãªã©ï¼‰
 }
 
 void Goal::Draw()
 {
-    // --- ƒrƒ‹ƒ{[ƒhŒvZ—ps—ñ ---
-    DirectX::XMMATRIX mCamInv =
-        DirectX::XMMatrixIdentity();
+    using namespace DirectX;
+
+    XMMATRIX mCamInv = XMMatrixIdentity();
 
     if (m_pCamera)
     {
-        // ƒXƒvƒ‰ƒCƒg•\¦—p‚Ìs—ñ‚ğİ’è
-      /*  Sprite::SetView(m_pCamera->GetViewMatrix());
-        Sprite::SetProjection(m_pCamera->GetProjectionMatrix());*/
+        XMFLOAT4X4 viewT = m_pCamera->GetViewMatrix();
 
-        // “]’u‚µ‚Ä‚¢‚È‚¢ƒJƒƒ‰‚Ìs—ñ‚ğæ“¾
-        DirectX::XMFLOAT4X4 view = m_pCamera->GetViewMatrix();
+        XMMATRIX view = XMMatrixTranspose(XMLoadFloat4x4(&viewT));
 
-        // “Ç‚İæ‚è—p ¨ ŒvZ—p
-        mCamInv = XMLoadFloat4x4(&view);
+        mCamInv = XMMatrixInverse(nullptr, view);
 
-  
-        // ‹ts—ñ‚ğŒvZ
-        mCamInv = XMMatrixInverse(nullptr, XMLoadFloat4x4(&view));
+        XMFLOAT4X4 invView;
+        XMStoreFloat4x4(&invView, mCamInv);
+        invView._41 = 0.0f;
+        invView._42 = 0.0f;
+        invView._43 = 0.0f;
 
-        // ŒvZ—p ¨ “Ç‚İæ‚è—p
-        XMStoreFloat4x4(&view, mCamInv);
-
-        // ˆÚ“®¬•ª‚ğíœ
-        view._41 = 0.0f;
-        view._42 = 0.0f;
-        view._43 = 0.0f;
-
-        // Ä‚ÑŒvZ—p‚É•ÏŠ·
-        mCamInv = XMLoadFloat4x4(&view);
+        mCamInv = XMLoadFloat4x4(&invView);
     }
 
-    // --- ƒrƒ‹ƒ{[ƒh‚ğŠÜ‚ß‚½ƒ[ƒ‹ƒhs—ñ ---
-    DirectX::XMMATRIX WorldMat =
+    XMMATRIX worldMat =
         mCamInv *
-        DirectX::XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z);
+        XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z);
 
-    // ƒXƒvƒ‰ƒCƒg—p‚É“]’u
-    DirectX::XMFLOAT4X4 world;
-    DirectX::XMStoreFloat4x4(&world, XMMatrixTranspose(WorldMat));
+    XMFLOAT4X4 world;
+    XMStoreFloat4x4(&world, XMMatrixTranspose(worldMat));
 
-    // --- •`‰æ ---
     Sprite::SetColor({ 1,1,1,1 });
     Sprite::SetOffset({ 0.0f,0.0f });
     Sprite::SetWorld(world);
@@ -80,10 +66,6 @@ void Goal::Draw()
     Sprite::SetTexture(m_pGoalTex);
     Sprite::Draw();
 }
-//Collision::Box Goal::GetCollision()
-//{
-//    return m_collision;
-//}
 void Goal::SetCamera(Camera* camera)
 {
     m_pCamera = camera;
