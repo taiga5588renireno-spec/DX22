@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "Input.h"
 #include "Collision.h"
+#include "PolylineEffect.h"
 
 class CPlayer : public GameObject
 {
@@ -21,7 +22,7 @@ private:
     float m_shotPower;
 
     Collision::Box m_collision;
-
+    PolylineEffect* m_pTrail;
 public:
     enum BoundAxis {
         BoundX,
@@ -47,6 +48,21 @@ private:
     bool CheckStop();
     void UpdateShot();
     void UpdateMove();
+private:
+    Texture* m_pShadowTex;                 // 影テクスチャ
+    DirectX::XMFLOAT3 m_shadowPos;          // 影位置
+    Collision::Box m_shadowCollision;       // 影当たり判定
+
+public:
+    void SetShadowPos(DirectX::XMFLOAT3 pos)
+    {
+        m_shadowPos = pos;
+    }
+
+    Collision::Box GetShadowCollision()
+    {
+        return m_shadowCollision;
+    }
 };
 
 #endif

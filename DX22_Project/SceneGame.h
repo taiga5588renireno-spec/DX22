@@ -7,6 +7,9 @@
 #include "CPlayer.h"
 #include "Block.h"
 #include "GaugeUI.h"
+#include "Goal.h"
+#include "Camera.h"
+
 
 class SceneGame : public Scene
 {
@@ -29,6 +32,9 @@ private:
 
     Block* m_pBlock = nullptr;
     GaugeUI* m_pGaugeUI = nullptr;
+    
+    
+    Goal* m_pGoal = nullptr;
 };
 
 #endif

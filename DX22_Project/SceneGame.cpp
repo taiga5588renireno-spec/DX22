@@ -6,6 +6,7 @@
 #include "Sprite.h"
 #include "Defines.h"
 #include "Collision.h"
+#include "Goal.h"
 
 static void DrawBoxTransform(
     float moveX, float moveY, float moveZ,
@@ -40,7 +41,7 @@ SceneGame::SceneGame()
 
     m_pCPlayer = new CPlayer();
     m_pCPlayer->SetCamera(m_pCamera);
-
+  
     m_pCamera->SetTarget(m_pCPlayer);
 
     m_pBlock = new Block({ 10.0f,8.0f,8.0f });
@@ -48,15 +49,22 @@ SceneGame::SceneGame()
 
     m_pGaugeUI = new GaugeUI();
 
+    m_pGoal = new Goal({ 64.0f,64.0f,0.0f });
+
     if (!m_pBranchModel->Load("Assets/Model/LowPolyNature/Tree_02.fbx", 0.0125f))
         MessageBox(NULL, "Branch_01 の読み込みに失敗しました。", "Error", MB_OK);
 
     if (!m_pBushModel->Load("Assets/Model/LowPolyNature/Rock_02.fbx", 0.05f))
         MessageBox(NULL, "Bush_01 の読み込みに失敗しました。", "Error", MB_OK);
+
+    m_pGoal->SetCamera(m_pCamera);
+
+    m_pGoal->SetPos({ 2.0f, 2.0f, 0.0f });
 }
 
 SceneGame::~SceneGame()
 {
+    delete  m_pGoal;        m_pGoal = nullptr;
     delete m_pGaugeUI;     m_pGaugeUI = nullptr;
     delete m_pBlock;       m_pBlock = nullptr;
     delete m_pCPlayer;     m_pCPlayer = nullptr;
@@ -85,7 +93,17 @@ void SceneGame::Update()
         else if (r.dir.y != 0.0f) m_pCPlayer->Bound(CPlayer::BoundY);
         else if (r.dir.z != 0.0f) m_pCPlayer->Bound(CPlayer::BoundZ);
     }
+    DirectX::XMFLOAT3 shadowPos = m_pCPlayer->GetPos();
+    Collision::Box s = m_pCPlayer->GetShadowCollision();
 
+    Collision::Result result = Collision::Hit(b, s);
+
+    if (result.isHit)
+        shadowPos.y = b.center.y + b.size.y * 0.5f;
+    else
+        shadowPos.y = 0.0f;
+
+    m_pCPlayer->SetShadowPos(shadowPos);
     m_pCamera->UpdateView();
 }
 
@@ -186,6 +204,22 @@ void SceneGame::Draw()
     m_pBlock->Draw();
 
     SetDepthTest(false);
+  
+    static ID3D11RasterizerState* rsNoCull = nullptr;
+    if (!rsNoCull)
+    {
+        D3D11_RASTERIZER_DESC rd = {};
+        rd.FillMode = D3D11_FILL_SOLID;
+        rd.CullMode = D3D11_CULL_NONE;
+        rd.DepthClipEnable = TRUE;
+        HRESULT hr = GetDevice()->CreateRasterizerState(&rd, &rsNoCull);
+        if (FAILED(hr))
+            MessageBox(nullptr, "CreateRasterizerState failed", "Error", MB_OK);
+    }
+
+
+    GetContext()->RSSetState(rsNoCull);
+    GetContext()->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
     XMFLOAT4X4 uiWVP[3];
 
@@ -215,25 +249,25 @@ void SceneGame::Draw()
     XMFLOAT4X4 view, proj;
     XMStoreFloat4x4(&view, XMMatrixTranspose(XMMatrixIdentity()));
     XMStoreFloat4x4(&proj, XMMatrixTranspose(ortho));
+  
     Sprite::SetView(view);
     Sprite::SetProjection(proj);
-
-    static ID3D11RasterizerState* rsNoCull = nullptr;
-    if (!rsNoCull)
-    {
-        D3D11_RASTERIZER_DESC rd = {};
-        rd.FillMode = D3D11_FILL_SOLID;
-        rd.CullMode = D3D11_CULL_NONE;
-        rd.DepthClipEnable = TRUE;
-        HRESULT hr = GetDevice()->CreateRasterizerState(&rd, &rsNoCull);
-        if (FAILED(hr))
-            MessageBox(nullptr, "CreateRasterizerState failed", "Error", MB_OK);
-    }
-    GetContext()->RSSetState(rsNoCull);
-    GetContext()->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
-
     m_pGaugeUI->Draw();
 
+   
+
+    Geometory::SetView(m_pCamera->GetViewMatrix());
+    Geometory::SetProjection(m_pCamera->GetProjectionMatrix());
+
+    //Sprite::SetView(m_pCamera->GetViewMatrix());
+    //Sprite::SetProjection(m_pCamera->GetProjectionMatrix());
+
     GetContext()->RSSetState(nullptr);
+
     SetDepthTest(true);
+
+    // Spriteにも3Dカメラを渡す
+    Sprite::SetView(m_pCamera->GetViewMatrix());
+    Sprite::SetProjection(m_pCamera->GetProjectionMatrix());
+    m_pGoal->Draw();
 }

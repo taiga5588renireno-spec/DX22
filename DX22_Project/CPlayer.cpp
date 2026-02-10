@@ -1,8 +1,12 @@
 ﻿#include "CPlayer.h"
 #include "Geometory.h"
 #include <DirectXMath.h>
-
+#include "Input.h"
+#include "TrailEffect.h"
+#include "Texture.h"
+#include "Sprite.h"
 using namespace DirectX;
+
 
 enum eShotStep
 {
@@ -19,13 +23,35 @@ CPlayer::CPlayer()
     , m_shotStep(SHOT_WAIT)
     , m_shotPower(0.0f)
     , m_collision()
+    ,m_pShadowTex(nullptr),m_shadowPos(),m_shadowCollision()
 {
     m_collision.size = { 0.2f, 0.2f, 0.2f };
     m_collision.center = m_pos;
+
+    m_shadowCollision.size = { 0.5f, 0.1f, 0.5f };
+    m_pShadowTex = new Texture();
+    if (FAILED(m_pShadowTex->Create("Assets/Texture/shadow.png")))
+    {
+        MessageBox(NULL, "Texture load failed.", "Error", MB_OK);
+    }
+    m_pTrail = new TrailEffect(this);
+    m_pTrail->AddLine(20);
+
 }
 
 CPlayer::~CPlayer()
 {
+    if (m_pTrail)
+    {
+        delete m_pTrail;
+        m_pTrail = nullptr;
+    }
+
+    if (m_pShadowTex)
+    {
+        delete m_pShadowTex;
+        m_pShadowTex = nullptr;
+    }
 }
 
 void CPlayer::SetCamera(Camera* pCamera)
@@ -35,7 +61,7 @@ void CPlayer::SetCamera(Camera* pCamera)
 
 void CPlayer::Update()
 {
-    if (!m_pCamera) return;
+    if (!m_pCamera) { return; }
 
     if (m_isStop)
         UpdateShot();
@@ -43,22 +69,57 @@ void CPlayer::Update()
         UpdateMove();
 
     m_collision.center = m_pos;
+    m_shadowCollision.center = m_pos;
+
+    m_pTrail->Update();
+
 }
 
 void CPlayer::Draw()
 {
-    XMMATRIX S = XMMatrixScaling(1.0f, 1.0f, 1.0f);
+   /* XMMATRIX S = XMMatrixScaling(1.0f, 1.0f, 1.0f);
     XMMATRIX R = XMMatrixRotationY(XMConvertToRadians(90.0f));
-    XMMATRIX T = XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z);
-
-    XMMATRIX mat = S * R * T;
-    mat = XMMatrixTranspose(mat);
+    XMMATRIX T = XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z);*/
+    XMMATRIX T =
+        XMMatrixTranslation(
+            m_shadowPos.x,
+            m_shadowPos.y,
+            m_shadowPos.z);
+    XMMATRIX mat ;
+    mat = XMMatrixTranspose(T);
 
     XMFLOAT4X4 fMat;
     XMStoreFloat4x4(&fMat, mat);
 
     Geometory::SetWorld(fMat);
     Geometory::DrawBox();
+
+    float rate = (m_pos.y - m_shadowPos.y) / 4.0f;
+   float scale = (1.0f - rate);
+
+   XMMATRIX S = XMMatrixScaling(scale, -scale, 1.0f);
+   XMMATRIX R = XMMatrixRotationX(DirectX::XMConvertToRadians(90.0f));
+            T =
+       XMMatrixTranslation(
+           m_shadowPos.x,
+           m_shadowPos.y + 0.01f,
+           m_shadowPos.z);
+
+   XMMATRIX mWorld = S * R * T;
+
+   XMStoreFloat4x4(&fMat, XMMatrixTranspose(mWorld));
+
+   Sprite::SetWorld(fMat);
+   Sprite::SetSize({ 2.3f, 2.3f });
+   Sprite::SetColor({ 0.0f, 0.0f, 0.0f, scale * 0.8f });
+   Sprite::SetTexture(m_pShadowTex);
+   Sprite::Draw();
+
+
+    m_pTrail->SetView(m_pCamera->GetViewMatrix());
+    m_pTrail->SetProjection(m_pCamera->GetProjectionMatrix());
+    m_pTrail->Draw();
+
 }
 
 Collision::Box CPlayer::GetCollision()

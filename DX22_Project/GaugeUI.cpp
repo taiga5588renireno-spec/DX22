@@ -47,13 +47,13 @@ void GaugeUI::Draw()
     // ===============================
     {
         XMMATRIX W =
-            XMMatrixTranslation(pos.x, pos.y, 0.0f); // ← БЕЗ SCALE
+            XMMatrixTranslation(pos.x, pos.y, 0.0f); 
 
         XMFLOAT4X4 world;
         XMStoreFloat4x4(&world, XMMatrixTranspose(W));
 
         Sprite::SetWorld(world);
-        Sprite::SetSize(size);                  // ← ТОЛЬКО ТУТ
+        Sprite::SetSize(size);                  
         Sprite::SetOffset({ 0.0f, 0.0f });
         Sprite::SetTexture(m_pFrame);
         Sprite::SetUVPos({ 0.0f, 0.0f });
@@ -69,13 +69,13 @@ void GaugeUI::Draw()
         float gaugeWidth = size.x * m_rate;
 
         XMMATRIX W =
-            XMMatrixTranslation(pos.x, pos.y, 0.0f); // ← БЕЗ SCALE
+            XMMatrixTranslation(pos.x, pos.y, 0.0f); 
 
         XMFLOAT4X4 world;
         XMStoreFloat4x4(&world, XMMatrixTranspose(W));
 
         Sprite::SetWorld(world);
-        Sprite::SetSize({ gaugeWidth, size.y }); // ← ширина = rate
+        Sprite::SetSize({ gaugeWidth, size.y });
         Sprite::SetOffset({ 0.0f, 0.0f });
         Sprite::SetTexture(m_pGauge);
         Sprite::SetUVPos({ 0.0f, 0.0f });
