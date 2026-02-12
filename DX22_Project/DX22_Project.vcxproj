@@ -146,6 +146,8 @@
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CameraDebug.cpp" />
+    <ClCompile Include="CameraEvent.cpp" />
+    <ClCompile Include="CameraPlayer.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="CPlayer.cpp" />
     <ClCompile Include="DirectX.cpp" />
@@ -176,6 +178,8 @@
     <ClInclude Include="Block.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraDebug.h" />
+    <ClInclude Include="CameraEvent.h" />
+    <ClInclude Include="CameraPlayer.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="Defines.h" />

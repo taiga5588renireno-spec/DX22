@@ -9,10 +9,18 @@
 #include "GaugeUI.h"
 #include "Goal.h"
 #include "Camera.h"
-
+#include "CameraEvent.h"
 
 class SceneGame : public Scene
 {
+    enum CameraKind {
+        CAM_DEBUG, // デバッグ用のカメラ 
+        CAM_EVENT, // イベント中のカメラ 
+        CAM_PLAYER, //プレイヤー用のカメラを別に作成できると非常によい
+        MAX_CAMERA
+    };
+
+
 public:
     SceneGame();
     ~SceneGame();
@@ -23,18 +31,22 @@ public:
     Collision::Box m_wallCollision;
 
 private:
+
     Model* m_pModel = nullptr;
     Model* m_pBranchModel = nullptr;
     Model* m_pBushModel = nullptr;
 
-    CameraDebug* m_pCamera = nullptr;
-    CPlayer* m_pCPlayer = nullptr;
 
+    CPlayer* m_pCPlayer = nullptr;
     Block* m_pBlock = nullptr;
-    GaugeUI* m_pGaugeUI = nullptr;
-    
-    
+    GaugeUI* m_pGaugeUI = nullptr; 
     Goal* m_pGoal = nullptr;
+
+
+    CameraDebug* m_pCamera = nullptr;      // 通常カメラ
+    CameraEvent* m_pEventCamera = nullptr; // イベントカメラ
+
+    bool m_isEvent = false;
 };
 
 #endif

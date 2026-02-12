@@ -120,6 +120,12 @@
     <ClCompile Include="PolylineEffect.cpp">
       <Filter>ソース ファイル\System</Filter>
     </ClCompile>
+    <ClCompile Include="CameraEvent.cpp">
+      <Filter>ソース ファイル\Work</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraPlayer.cpp">
+      <Filter>ソース ファイル\Work</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Defines.h">
@@ -198,6 +204,12 @@
       <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>
     <ClInclude Include="PolylineEffect.h">
+      <Filter>ヘッダー ファイル\System</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraEvent.h">
+      <Filter>ヘッダー ファイル\System</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraPlayer.h">
       <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,3 +1,4 @@
+//camera.h
 #pragma once
 #include <DirectXMath.h>
 
@@ -66,6 +67,7 @@ protected:
     DirectX::XMFLOAT3 m_pos;   // カメラ位置
     DirectX::XMFLOAT3 m_look;  // 注視点
     DirectX::XMFLOAT3 m_up;    // 上方向
+   
     float m_fovy;              // 画角
     float m_aspect;            // アスペクト比
     float m_near;              // ニアクリップ
