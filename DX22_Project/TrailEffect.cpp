@@ -23,7 +23,7 @@ void TrailEffect::UpdateControlPoints(LineID id, ControlPoints& controlPoints)
 	DirectX::XMVECTOR vOld = DirectX::XMLoadFloat3(&m_oldPos);
 	DirectX::XMVECTOR vNow = DirectX::XMLoadFloat3(&pos);
 	DirectX::XMVECTOR vDir =
-		DirectX::XMVectorSubtract(vOld, vNow);
+    DirectX::XMVectorSubtract(vOld, vNow);
 
 	//
 	DirectX::XMStoreFloat(&distance, DirectX::XMVector3Length(vDir));

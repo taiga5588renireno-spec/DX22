@@ -35,14 +35,10 @@ private:
     Model* m_pModel = nullptr;
     Model* m_pBranchModel = nullptr;
     Model* m_pBushModel = nullptr;
-
-
     CPlayer* m_pCPlayer = nullptr;
     Block* m_pBlock = nullptr;
     GaugeUI* m_pGaugeUI = nullptr; 
     Goal* m_pGoal = nullptr;
-
-
     CameraDebug* m_pCamera = nullptr;      // 通常カメラ
     CameraEvent* m_pEventCamera = nullptr; // イベントカメラ
 

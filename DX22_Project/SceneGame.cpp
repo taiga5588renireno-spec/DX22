@@ -117,6 +117,7 @@ void SceneGame::Update()
     Collision::Box b = m_pBlock->GetCollision();
     Collision::Result r = Collision::Hit(a, b);
 
+    //
     if (r.isHit)
     {
         if (r.dir.x != 0.0f)      m_pCPlayer->Bound(CPlayer::BoundX);
@@ -150,6 +151,7 @@ void SceneGame::Draw()
 
     RenderTarget* rtv = GetDefaultRTV();
     DepthStencil* dsv = GetDefaultDSV();
+
     SetRenderTargets(1, &rtv, dsv);
     SetDepthTest(true);
 
@@ -161,14 +163,12 @@ void SceneGame::Draw()
     GetContext()->RSSetViewports(1, &vp);
 
     XMFLOAT4X4 fwvp[3];
-
     XMStoreFloat4x4(&fwvp[0], XMMatrixTranspose(XMMatrixIdentity()));
 
     fwvp[1] = currentCamera->GetViewMatrix();
     fwvp[2] = currentCamera->GetProjectionMatrix();
 
     ShaderList::SetWVP(fwvp);
-
     Geometory::SetView(fwvp[1]);
     Geometory::SetProjection(fwvp[2]);
 

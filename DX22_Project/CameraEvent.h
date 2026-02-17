@@ -4,6 +4,7 @@
 
 class CameraEvent : public Camera
 {
+
 private:
     DirectX::XMFLOAT3 m_start;     // 開始位置
     DirectX::XMFLOAT3 m_end;       // 終了位置

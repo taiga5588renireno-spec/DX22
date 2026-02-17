@@ -23,7 +23,7 @@ CPlayer::CPlayer()
     , m_shotStep(SHOT_WAIT)
     , m_shotPower(0.0f)
     , m_collision()
-    ,m_pShadowTex(nullptr),m_shadowPos(),m_shadowCollision()
+    , m_pShadowTex(nullptr),m_shadowPos(),m_shadowCollision()
 {
     m_collision.size = { 0.2f, 0.2f, 0.2f };
     m_collision.center = m_pos;
