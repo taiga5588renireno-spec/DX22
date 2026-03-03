@@ -49,8 +49,13 @@ SceneGame::SceneGame()
   
     m_pCamera->SetTarget(m_pCPlayer);
 
-    m_pBlock = new Block({ 10.0f,8.0f,8.0f });
-    m_pBlock->SetPos({ 0.0f,0.5f,-8.0f });
+    m_pBlock = new Block({ 4.0f,1.0f,10.0f });
+    m_pBlock->SetPos({ 0.0f,0.5f,6.0f });
+
+
+    m_pSlope = new Block({ 4.0f,1.0f,12.0f });
+    m_pSlope->SetPos({ 4.0f,1.0f,5.0f });
+    m_pSlope->SetRotate(( - 45.0f), 0.0f, 0.0f);
 
     m_pGaugeUI = new GaugeUI();
 
@@ -83,6 +88,8 @@ SceneGame::~SceneGame()
     delete m_pBranchModel; m_pBranchModel = nullptr;
     delete m_pModel;       m_pModel = nullptr;
     delete m_pEventCamera; m_pEventCamera = nullptr;
+
+    delete m_pSlope; m_pSlope = nullptr;
 }
 void SceneGame::Update()
 {
@@ -124,6 +131,17 @@ void SceneGame::Update()
         else if (r.dir.y != 0.0f) m_pCPlayer->Bound(CPlayer::BoundY);
         else if (r.dir.z != 0.0f) m_pCPlayer->Bound(CPlayer::BoundZ);
     }
+
+    Collision::Plane p = m_pSlope->GetPlane();
+    Collision::Ray ray = { m_pCPlayer->GetPos(),{0.0f,-1.0f,0.0f} };
+    Collision::Result slopeResult = Collision::Hit(p, ray);
+
+ 
+    if (slopeResult.isHit)
+    {
+        m_pCPlayer->Bound(slopeResult.dir);
+    }
+
 
     DirectX::XMFLOAT3 shadowPos = m_pCPlayer->GetPos();
     Collision::Box s = m_pCPlayer->GetShadowCollision();
@@ -219,5 +237,7 @@ void SceneGame::Draw()
     Sprite::SetProjection(currentCamera->GetProjectionMatrix());
 
     m_pGoal->Draw();
+
+    m_pSlope->Draw();
 }
 

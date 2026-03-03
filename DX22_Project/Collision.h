@@ -19,7 +19,7 @@ public:
     struct Result
     {
         bool isHit = false;
-        DirectX::XMFLOAT3 dir = { 0.0f, 0.0f, 0.0f };
+        DirectX::XMFLOAT3 dir;
         DirectX::XMFLOAT3 point;
     };
 public:

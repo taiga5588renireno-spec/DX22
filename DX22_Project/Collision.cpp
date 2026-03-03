@@ -60,3 +60,49 @@ Collision::Result Collision::Hit(Sphere a, Sphere b)
 
     return out;
 }
+Collision::Result Collision::Hit(Plane plane, Ray ray)
+{
+    Result result = {};
+    result.isHit = false;
+
+    float rayLength;
+    DirectX::XMVECTOR vRayStart =
+        DirectX::XMLoadFloat3(&ray.start);
+    DirectX::XMVECTOR vRayVec=
+        DirectX::XMLoadFloat3(&ray.direction);
+    DirectX::XMVECTOR vRayEnd =
+        DirectX::XMVectorAdd(vRayStart, vRayVec);
+    DirectX::XMStoreFloat(&rayLength,
+        DirectX::XMVector3Length(vRayVec));
+
+    DirectX::XMVECTOR vPlaneN =
+        DirectX::XMLoadFloat3(&plane.normal);
+    DirectX::XMVECTOR vPlanePos =
+        DirectX::XMLoadFloat3(&plane.pos);
+    vPlaneN = DirectX::XMVector3Normalize(vPlaneN);
+
+    float P1;
+    DirectX::XMVECTOR vToStart =
+        DirectX::XMVectorSubtract(vRayStart, vPlanePos);
+    DirectX::XMStoreFloat(&P1,
+        DirectX::XMVector3Dot(vPlaneN, vToStart));
+
+    float P2;
+    DirectX::XMVECTOR vToEnd =
+        DirectX::XMVectorSubtract(vRayEnd, vPlanePos);
+    DirectX::XMStoreFloat(&P2,
+        DirectX::XMVector3Dot(vPlaneN, vToEnd));
+
+    if (P1 > 0 && P2 < 0)
+    {
+        result.isHit = true;
+        result.dir = plane.normal;
+        float rate = fabsf(P1) / (fabsf(P1) + fabsf(P2));
+        DirectX::XMStoreFloat3(&result.point,
+            DirectX::XMVectorAdd(
+                vRayStart,
+                DirectX::XMVectorScale(vRayVec, rate)));
+    }
+
+    return result;
+}

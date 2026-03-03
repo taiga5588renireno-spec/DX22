@@ -41,9 +41,13 @@ public:
 
     Collision::Box GetCollision();
 
+    float GetPower();
+
 public:
     void Bound(BoundAxis axis);
+    void Bound(DirectX::XMFLOAT3 dir);
 
+  
 private:
     bool CheckStop();
     void UpdateShot();

@@ -39,6 +39,7 @@ private:
     Block* m_pBlock = nullptr;
     GaugeUI* m_pGaugeUI = nullptr; 
     Goal* m_pGoal = nullptr;
+    Block* m_pSlope=nullptr;
     CameraDebug* m_pCamera = nullptr;      // 通常カメラ
     CameraEvent* m_pEventCamera = nullptr; // イベントカメラ
 

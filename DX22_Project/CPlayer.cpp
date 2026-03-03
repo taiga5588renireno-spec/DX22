@@ -225,6 +225,33 @@ void CPlayer::Bound(BoundAxis axis)
     m_collision.center = m_pos;
 }
 
+void CPlayer::Bound(DirectX::XMFLOAT3 dir)
+{
+    m_pos.x -= m_move.x;
+    m_pos.y -= m_move.y;
+    m_pos.z -= m_move.z;
+
+    DirectX::XMVECTOR vPlaneN = DirectX::XMLoadFloat3(&dir);
+    DirectX::XMVECTOR vMove = DirectX::XMLoadFloat3(&m_move);
+    DirectX::XMVECTOR vDot = DirectX::XMVector3Dot(vPlaneN, vMove);
+
+    DirectX::XMVECTOR vAdd = 
+        DirectX::XMVectorMultiply(vPlaneN,
+        DirectX::XMVectorAbs(vDot));
+
+    vMove = DirectX::XMVectorAdd(vMove,
+        DirectX::XMVectorScale(vAdd, 2.0f));
+    vMove = DirectX::XMVectorScale(vMove, 0.7f);
+
+    DirectX::XMStoreFloat3(&m_move, vMove);
+
+    if (0.0f < m_move.y && m_move.y < 0.05f)
+    {
+        m_move.y = 0.0f;
+        m_isGround = true;
+    }
+}
+
 bool CPlayer::CheckStop()
 {
     float speed = 0.0f;
